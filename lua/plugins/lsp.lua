@@ -29,18 +29,26 @@ return {
       vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
       vim.keymap.set('n', '<space>f', function()
         vim.lsp.buf.format { async = true }
-      end, opts)
+      end, { buffer= bufnr, desc = "Format code (LSP)"})
     end
 
     require("neodev").setup()
     require("lspconfig").lua_ls.setup({
       on_attach = on_attach,
+      capabilities = require('cmp_nvim_lsp').default_capabilities(),
       settings = {
         Lua = {
           telemetry = { enable = false },
           workspace = { checkThirdParty = false },
         }
       }
+    })
+    -- >>> Lenguaje C/C++ añadido
+    require("lspconfig").clangd.setup({
+      on_attach = on_attach, -- Reutilizamos la misma función on_attach
+      capabilities = require('cmp_nvim_lsp').default_capabilities(),
+      -- cmd = {"clangd"}, -- Mason usualmente maneja esto. No es necesario si Mason está funcionando.
+      -- filetypes = {"c", "cpp", "objc", "objcpp", "cuda"}, -- Mason también suele manejar esto.
     })
   end
 }

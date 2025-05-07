@@ -12,6 +12,10 @@ return {
       "lua",
       "luadoc",
       "query",
+      "c",
+      "cpp",
+      "markdown",
+      "markdown_inline",
     },
     highlight = {
       enable = true,
