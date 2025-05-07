@@ -1,4 +1,3 @@
-```markdown
 # ✨ Mi Configuración de NeoVim ~ 2025 ✨
 
 Esta es la configuración base de mi terminal en NeoVim, ¡en constante evolución hacia la perfección!
@@ -736,20 +735,5 @@ return {
 ---
 
 > 🚀 De momento estos son todos los archivos y plugins que se usan para esta configuración base de Neovim. ¡A seguir codeando!
+
 ```
-
-**Cambios clave realizados:**
-
-1.  **Título con Emoji:** `✨ Mi Configuración de NeoVim ~ 2025 ✨`
-2.  **Emojis Unicode:** Cambié `:open_file_folder:` por 📂 y `:page_facing_up:` por 📄. Estos suelen tener mejor soporte y apariencia.
-3.  **Introducciones y Conclusiones con Blockquotes:** Para darle un toque más amigable y estructurado.
-4.  **Separadores `---`:** Para dividir secciones principales de forma clara.
-5.  **Encabezados de Archivo Mejorados:**
-    *   Ahora incluyen el path completo relativo a `lua/` o `ftplugin/` (ej: `#### 📄 ftplugin/c.lua`, `##### 📄 lua/config/init.lua`).
-    *   Se añadió un pequeño texto descriptivo debajo de cada encabezado de archivo o directorio.
-6.  **Consistencia en la estructura:** Todos los archivos de plugin y configuración siguen un patrón similar.
-7.  **Corrección en `telescope.lua`:** En la sección `config = function(opts)` de lazy, el primer argumento es la tabla de especificación del plugin y el segundo son las `opts`. Lo corregí a `config = function(_, opts)`.
-8.  **Clarificación de `main` y `config` en `lazy.nvim`:** Añadí comentarios para explicar cuándo se usa `main` para cargar configuraciones desde `lua/config/plugins/`.
-9.  **Eliminación de las notas al pie `[¹]`:** Como eran idénticas y no aportaban información específica, se eliminaron para limpiar el documento.
-
-Espero que esta versión te guste más y sea más fácil de leer y mantener. ¡Avísame si quieres ajustar algo más!
