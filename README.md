@@ -735,5 +735,3 @@ return {
 ---
 
 > 🚀 De momento estos son todos los archivos y plugins que se usan para esta configuración base de Neovim. ¡A seguir codeando!
-
-```
