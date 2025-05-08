@@ -50,5 +50,20 @@ return {
       -- cmd = {"clangd"}, -- Mason usualmente maneja esto. No es necesario si Mason está funcionando.
       -- filetypes = {"c", "cpp", "objc", "objcpp", "cuda"}, -- Mason también suele manejar esto.
     })
-  end
+    -- >>> Lenguaje SQL añadido
+    require("lspconfig").sqlls.setup({
+    on_attach = on_attach, -- Reutiliza la misma función on_attach
+    capabilities = require('cmp_nvim_lsp').default_capabilities(), -- Reutiliza las mismas capabilities que definiste arriba
+  -- sqlls puede tener configuraciones específicas, pero empecemos con lo básico
+  -- Por ejemplo, para especificar el dialecto si es necesario (opcional):
+      --settings = {
+        --sqlls = {
+          --dialect = "mysql", -- o "postgresql"
+          -- Puedes añadir configuraciones de conexión aquí si el LSP las soporta
+          -- para que conozca tu esquema, pero vim-dadbod ya maneja la conexión.
+        --}
+      --}
+  -- Para empezar, no necesitamos settings específicos.
+})
+end
 }

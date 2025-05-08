@@ -16,6 +16,7 @@ return {
       "cpp",
       "markdown",
       "markdown_inline",
+      "sql",
     },
     highlight = {
       enable = true,
