@@ -32,6 +32,7 @@ Esta es la configuración base de mi terminal en NeoVim, ¡en constante evoluci�
         *   📄 `none-ls.lua`
         *   📄 `notify.lua`
         *   📄 `telescope.lua`
+        *   📄 `terminal.lua`
         *   📄 `tree-sitter.lua`
 *   📄 `init.lua` (Raíz)
 *   📄 `lazy-lock.json`
@@ -86,10 +87,119 @@ Configuraciones específicas por tipo de archivo (`filetype plugin`).
 Ajustes para archivos C.
 
 ```lua
-vim.bo.tabstop = 2      -- Número de espacios que cuenta un <Tab>
-vim.bo.softtabstop = 2  -- Número de espacios para <Tab> al editar (si es >0, usa mezcla de tabs/espacios)
-vim.bo.shiftwidth = 2   -- Número de espacios para indentación automática (>>, <<)
-vim.bo.expandtab = true -- Usar espacios en lugar de caracteres <Tab> literales
+-- ~/.config/nvim/ftplugin/c.lua
+-- vim.notify("INTENTO DE CARGA: ftplugin/c.lua - Filetype buffer: " .. vim.bo.filetype, vim.log.levels.ERROR, {title = "DIAGNÓSTICO INICIAL"})
+
+if vim.bo.filetype ~= 'c' then
+  -- vim.notify("GUARDA C: No es filetype 'c' (es '" .. vim.bo.filetype .. "'), saliendo de ftplugin/c.lua.", vim.log.levels.ERROR, {title = "C DEBUG"})
+  return
+end
+
+-- vim.notify("GUARDA C: Filetype ES 'c', procediendo en ftplugin/c.lua.", vim.log.levels.ERROR, {title = "C DEBUG"})
+
+vim.bo.tabstop = 2
+vim.bo.softtabstop = 2
+vim.bo.shiftwidth = 2
+vim.bo.expandtab = true
+
+local function compile_and_run_c_toggleterm()
+  vim.cmd('write')
+  local current_file_fullpath = vim.fn.expand('%:p')
+  local executable_name_base = vim.fn.expand('%:t:r')
+  local file_dir = vim.fn.expand('%:p:h')
+  local executable_fullpath = file_dir .. "/" .. executable_name_base
+
+  -- vim.notify("FUNCIÓN C: compile_and_run_c_toggleterm LLAMADA. Filetype buffer: " .. vim.bo.filetype, vim.log.levels.ERROR, {title = "C DEBUG"})
+
+  local compile_flags_c = "-std=c11 -Wall -Wextra -pedantic"
+  local command_to_run_c = string.format(
+    "if gcc %s %s -o %s; then clear; %s; echo ''; echo '--- Ejecución finalizada. ---'; else echo ''; echo '--- COMPILACIÓN FALLIDA ---'; fi; echo ''; echo 'Presiona tecla Enter.'; read -n 1 -s -r",
+    compile_flags_c,
+    vim.fn.shellescape(current_file_fullpath),
+    vim.fn.shellescape(executable_fullpath),
+    vim.fn.shellescape(executable_fullpath)
+  )
+  -- vim.notify("FUNCIÓN C: Comando construido: " .. command_to_run_c, vim.log.levels.ERROR, {title = "C DEBUG"})
+
+  local command_to_run = command_to_run_c
+
+  local toggleterm_module = require("toggleterm")
+  if not toggleterm_module or not toggleterm_module.Terminal then
+    local tt_setup_ok, toggleterm_setup = pcall(require, "toggleterm.terminal")
+    if not tt_setup_ok or not toggleterm_setup or not toggleterm_setup.Terminal then
+        -- vim.notify("toggleterm.nvim o su módulo Terminal no está disponible.", vim.log.levels.ERROR, {title = "C DEBUG"})
+        vim.api.nvim_err_writeln("Error: toggleterm.nvim no está disponible para ftplugin/c.lua")
+        return
+    else
+        toggleterm_module = toggleterm_setup
+    end
+  end
+  local term = toggleterm_module.Terminal:new({
+    cmd = command_to_run,
+    dir = file_dir,
+    direction = "float",
+    hidden = true,
+    id = 1002,
+    on_open = function(opened_term)
+      vim.api.nvim_buf_set_keymap(opened_term.bufnr, "n", "q", "<cmd>close<CR>", { noremap = true, silent = true })
+      vim.api.nvim_buf_set_keymap(opened_term.bufnr, "t", "<Esc>", "<C-\\><C-n><cmd>close<CR>", { noremap = true, silent = true })
+    end,
+    autoclose = true,
+  })
+  term:toggle()
+end
+vim.keymap.set('n', '<leader>rt', compile_and_run_c_toggleterm, { buffer = true, noremap = true, silent = true, desc = "Compile & Run C (ToggleTerm)" })
+
+local function compile_only_c_toggleterm()
+  vim.cmd('write')
+  local current_file_fullpath = vim.fn.expand('%:p')
+  local executable_name_base = vim.fn.expand('%:t:r')
+  local file_dir = vim.fn.expand('%:p:h')
+  local executable_fullpath = file_dir .. "/" .. executable_name_base
+
+  -- vim.notify("FUNCIÓN C: compile_only_c_toggleterm LLAMADA. Filetype buffer: " .. vim.bo.filetype, vim.log.levels.ERROR, {title = "C DEBUG"})
+  
+  local compile_flags_c = "-std=c11 -Wall -Wextra -pedantic"
+  local command_to_run_c_only = string.format(
+    "if gcc %s %s -o %s; then echo 'Compilación de %s exitosa!'; else echo 'Error: compilación de %s fallida.'; fi; echo ''; echo 'Presiona cualquier tecla para cerrar esta ventana.'; read -n 1 -s -r",
+    compile_flags_c,
+    vim.fn.shellescape(current_file_fullpath),
+    vim.fn.shellescape(executable_fullpath),
+    vim.fn.basename(current_file_fullpath),
+    vim.fn.basename(current_file_fullpath)
+  )
+  -- vim.notify("FUNCIÓN C: Comando (solo compilar) construido: " .. command_to_run_c_only, vim.log.levels.ERROR, {title = "C DEBUG"})
+  
+  local command_to_run = command_to_run_c_only
+
+  local toggleterm_module = require("toggleterm")
+  if not toggleterm_module or not toggleterm_module.Terminal then
+    local tt_setup_ok, toggleterm_setup = pcall(require, "toggleterm.terminal")
+    if not tt_setup_ok or not toggleterm_setup or not toggleterm_setup.Terminal then
+        -- vim.notify("toggleterm.nvim o su módulo Terminal no está disponible.", vim.log.levels.ERROR, {title = "C DEBUG"})
+        vim.api.nvim_err_writeln("Error: toggleterm.nvim no está disponible para ftplugin/c.lua")
+        return
+    else
+        toggleterm_module = toggleterm_setup
+    end
+  end
+  local term = toggleterm_module.Terminal:new({
+    cmd = command_to_run,
+    dir = file_dir,
+    direction = "float",
+    hidden = true,
+    id = 1004,
+    on_open = function(opened_term)
+      vim.api.nvim_buf_set_keymap(opened_term.bufnr, "n", "q", "<cmd>close<CR>", { noremap = true, silent = true })
+      vim.api.nvim_buf_set_keymap(opened_term.bufnr, "t", "<Esc>", "<C-\\><C-n><cmd>close<CR>", { noremap = true, silent = true })
+    end,
+    autoclose = true,
+  })
+  term:toggle()
+end
+vim.keymap.set('n', '<leader>rC', compile_only_c_toggleterm, { buffer = true, noremap = true, silent = true, desc = "Compile Only C (ToggleTerm)" })
+
+-- vim.notify("FIN DE CARGA: ftplugin/c.lua", vim.log.levels.ERROR, {title = "DIAGNÓSTICO FINAL"})
 ```
 
 #### 📄 `ftplugin/cpp.lua`
@@ -97,10 +207,115 @@ vim.bo.expandtab = true -- Usar espacios en lugar de caracteres <Tab> literales
 Ajustes para archivos C++.
 
 ```lua
-vim.bo.tabstop = 2      -- Número de espacios que cuenta un <Tab>
-vim.bo.softtabstop = 2  -- Número de espacios para <Tab> al editar (si es >0, usa mezcla de tabs/espacios)
-vim.bo.shiftwidth = 2   -- Número de espacios para indentación automática (>>, <<)
-vim.bo.expandtab = true -- Usar espacios en lugar de caracteres <Tab> literales
+-- ~/.config/nvim/ftplugin/cpp.lua
+-- vim.notify("INTENTO DE CARGA: ftplugin/cpp.lua - Filetype buffer: " .. vim.bo.filetype, vim.log.levels.ERROR, {title = "DIAGNÓSTICO INICIAL"})
+
+vim.bo.tabstop = 2
+vim.bo.softtabstop = 2
+vim.bo.shiftwidth = 2
+vim.bo.expandtab = true
+
+local function compile_and_run_cpp_toggleterm()
+  vim.cmd('write')
+
+  local current_file_fullpath = vim.fn.expand('%:p')
+  local executable_name_base = vim.fn.expand('%:t:r')
+  local file_dir = vim.fn.expand('%:p:h')
+  local executable_fullpath = file_dir .. "/" .. executable_name_base
+
+  -- vim.notify("FUNCIÓN CPP: compile_and_run_cpp_toggleterm LLAMADA. Filetype buffer: " .. vim.bo.filetype, vim.log.levels.ERROR, {title = "CPP DEBUG"})
+  
+  local compile_flags_cpp = "-std=c++17 -Wall -Wextra -pedantic"
+  local command_to_run_cpp = string.format(
+    "if g++ %s %s -o %s; then clear; %s; echo ''; echo '--- Ejecución finalizada. ---'; else echo ''; echo '--- COMPILACIÓN FALLIDA ---'; fi; echo ''; echo 'Presiona Enter.'; read -n 1 -s -r",
+    compile_flags_cpp,
+    vim.fn.shellescape(current_file_fullpath),
+    vim.fn.shellescape(executable_fullpath),
+    vim.fn.shellescape(executable_fullpath)
+  )
+  -- vim.notify("FUNCIÓN CPP: Comando construido: " .. command_to_run_cpp, vim.log.levels.ERROR, {title = "CPP DEBUG"})
+
+  local command_to_run = command_to_run_cpp
+
+  local toggleterm_module = require("toggleterm")
+  if not toggleterm_module or not toggleterm_module.Terminal then
+    local tt_setup_ok, toggleterm_setup = pcall(require, "toggleterm.terminal")
+    if not tt_setup_ok or not toggleterm_setup or not toggleterm_setup.Terminal then
+        -- vim.notify("toggleterm.nvim o su módulo Terminal no está disponible.", vim.log.levels.ERROR, {title = "CPP DEBUG"})
+        vim.api.nvim_err_writeln("Error: toggleterm.nvim no está disponible para ftplugin/cpp.lua") -- Alternativa más visible si falla
+        return
+    else
+        toggleterm_module = toggleterm_setup
+    end
+  end
+
+  local term = toggleterm_module.Terminal:new({
+    cmd = command_to_run,
+    dir = file_dir,
+    direction = "float",
+    hidden = true,
+    id = 1001,
+    on_open = function(opened_term)
+      vim.api.nvim_buf_set_keymap(opened_term.bufnr, "n", "q", "<cmd>close<CR>", { noremap = true, silent = true })
+      vim.api.nvim_buf_set_keymap(opened_term.bufnr, "t", "<Esc>", "<C-\\><C-n><cmd>close<CR>", { noremap = true, silent = true })
+    end,
+    autoclose = true,
+  })
+  term:toggle()
+end
+
+vim.keymap.set('n', '<leader>rt', compile_and_run_cpp_toggleterm, { buffer = true, noremap = true, silent = true, desc = "Compile & Run C++ (ToggleTerm)" })
+
+local function compile_only_cpp_toggleterm()
+  vim.cmd('write')
+  local current_file_fullpath = vim.fn.expand('%:p')
+  local executable_name_base = vim.fn.expand('%:t:r')
+  local file_dir = vim.fn.expand('%:p:h')
+  local executable_fullpath = file_dir .. "/" .. executable_name_base
+
+  -- vim.notify("FUNCIÓN CPP: compile_only_cpp_toggleterm LLAMADA. Filetype buffer: " .. vim.bo.filetype, vim.log.levels.ERROR, {title = "CPP DEBUG"})
+
+  local compile_flags_cpp = "-std=c++17 -Wall -Wextra -pedantic"
+  local command_to_run_cpp_only = string.format(
+    "if g++ %s %s -o %s; then echo 'Compilación de %s exitosa!'; else echo 'Error: compilación de %s fallida.'; fi; echo ''; echo 'Presiona cualquier tecla para cerrar esta ventana.'; read -n 1 -s -r",
+    compile_flags_cpp,
+    vim.fn.shellescape(current_file_fullpath),
+    vim.fn.shellescape(executable_fullpath),
+    vim.fn.basename(current_file_fullpath),
+    vim.fn.basename(current_file_fullpath)
+  )
+  -- vim.notify("FUNCIÓN CPP: Comando (solo compilar) construido: " .. command_to_run_cpp_only, vim.log.levels.ERROR, {title = "CPP DEBUG"})
+  
+  local command_to_run = command_to_run_cpp_only
+
+  local toggleterm_module = require("toggleterm")
+  if not toggleterm_module or not toggleterm_module.Terminal then
+    local tt_setup_ok, toggleterm_setup = pcall(require, "toggleterm.terminal")
+    if not tt_setup_ok or not toggleterm_setup or not toggleterm_setup.Terminal then
+        -- vim.notify("toggleterm.nvim o su módulo Terminal no está disponible.", vim.log.levels.ERROR, {title = "CPP DEBUG"})
+        vim.api.nvim_err_writeln("Error: toggleterm.nvim no está disponible para ftplugin/cpp.lua")
+        return
+    else
+        toggleterm_module = toggleterm_setup
+    end
+  end
+  local term = toggleterm_module.Terminal:new({
+    cmd = command_to_run,
+    dir = file_dir,
+    direction = "float",
+    hidden = true,
+    id = 1003,
+    on_open = function(opened_term)
+      vim.api.nvim_buf_set_keymap(opened_term.bufnr, "n", "q", "<cmd>close<CR>", { noremap = true, silent = true })
+      vim.api.nvim_buf_set_keymap(opened_term.bufnr, "t", "<Esc>", "<C-\\><C-n><cmd>close<CR>", { noremap = true, silent = true })
+    end,
+    autoclose = true,
+  })
+  term:toggle()
+end
+vim.keymap.set('n', '<leader>rC', compile_only_cpp_toggleterm, { buffer = true, noremap = true, silent = true, desc = "Compile Only C++ (ToggleTerm)" })
+
+-- vim.notify("FIN DE CARGA: ftplugin/cpp.lua", vim.log.levels.ERROR, {title = "DIAGNÓSTICO FINAL"})
 ```
 
 #### 📄 `ftplugin/lua.lua`
@@ -408,12 +623,41 @@ return {
 Plugin: `vim-enfocado` (tema de colores).
 
 ```lua
+-- lua/plugins/colorscheme.lua
 return {
-  "wuelnerdotexe/vim-enfocado",
+  "catppuccin/nvim",
+  name = "catppuccin", -- Nombre para referenciarlo
   lazy = false,
-  priority = 1000,
+  priority = 1000,    -- Asegura que se cargue temprano
   config = function()
-  	vim.cmd([[colorscheme enfocado]])
+    local flavour = "frappe" -- << CAMBIA AQUÍ TU FLAVOUR PREFERIDO: "latte", "frappe", "macchiato", "mocha"
+
+    local status_ok, catppuccin = pcall(require, "catppuccin")
+    if not status_ok then
+      -- Puedes dejar esta notificación de error si quieres, por si el plugin falla en el futuro
+      vim.notify("Catppuccin plugin (main module) not found. Please check installation.", vim.log.levels.ERROR)
+      return
+    end
+
+    catppuccin.setup({
+      flavour = flavour,
+      transparent_background = false,
+      term_colors = true,
+      -- SIN SECCIÓN DE INTEGRATIONS POR AHORA
+      -- styles = {
+      --   comments = { "italic" },
+      --   conditionals = { "italic" },
+      -- },
+    })
+
+    vim.cmd.colorscheme("catppuccin-" .. flavour)
+
+    -- Verificación silenciosa opcional, o simplemente confiar en que funciona
+    -- if vim.g.colors_name == ("catppuccin-" .. flavour) then
+    --   -- Todo bien
+    -- else
+    --   vim.notify("Failed to apply Catppuccin theme (Simple Setup). Current: " .. (vim.g.colors_name or "nil"), vim.log.levels.ERROR)
+    -- end
   end,
 }
 ```
@@ -745,6 +989,60 @@ return {
     { "<leader>pf", function() require('telescope.builtin').find_files() end, desc = "Telescope Find Files" },
     { "<leader>ph", function() require("telescope.builtin").help_tags() end, desc = "Telescope Help" },
     { "<leader>bb", function() require("telescope").extensions.file_browser.file_browser({ path = "%:h:p", select_buffer = true }) end, desc = "Telescope file browser" }
+  },
+}
+```
+
+##### 📄 `lua/plugins/terminal.lua`
+
+Plugin: `toggleterm.nvim` (notificaciones mejoradas).
+
+```lua
+-- ~/.config/nvim/lua/plugins/terminal.lua
+return {
+  {
+    "akinsho/toggleterm.nvim",
+    version = "*", -- o una versión específica si prefieres
+    opts = {
+      size = function(term)
+        if term.direction == "horizontal" then
+          return 15 -- Altura para splits horizontales
+        elseif term.direction == "vertical" then
+          return vim.o.columns * 0.4 -- Ancho para splits verticales
+        end
+        return 20 -- Tamaño para terminales flotantes (altura si es flotante por defecto)
+      end,
+      open_mapping = [[<c-t>]], -- Atajo para abrir un terminal genérico (Ctrl + t)
+      hide_numbers = true,       -- Ocultar números de línea en el terminal
+      shade_filetypes = {},
+      shade_terminals = true,
+      shading_factor = 1, -- Un poco menos de sombreado que el valor por defecto
+      start_in_insert = true,
+      insert_mappings = true, -- Permite usar mapeos de inserción en el terminal
+      persist_size = true,
+      direction = 'float', -- Por defecto, los terminales se abrirán como flotantes
+      close_on_exit = true, -- Cerrar la ventana del terminal cuando el proceso termine
+      shell = vim.o.shell, -- Usar el shell configurado en Neovim
+      float_opts = {
+        border = 'curved', -- Tipo de borde para terminales flotantes
+        winblend = 0,
+        highlights = {
+          border = "Normal",
+          background = "Normal",
+        },
+      },
+      -- Mapeos de ventana para cerrar el terminal flotante
+      -- Puedes usar 'q' en modo normal o <Esc> en modo terminal para cerrar
+      winbar = {
+        enabled = false, -- Deshabilitar la winbar para toggleterm si no la usas
+      },
+    },
+    -- Configuración opcional, puedes añadir mapeos de teclas aquí si lo prefieres globalmente
+    -- config = function(_, opts)
+    --   require('toggleterm').setup(opts)
+    --   -- Ejemplo de mapeo global para un terminal flotante
+    --   -- vim.keymap.set('n', '<leader>tf', "<cmd>ToggleTerm direction=float<cr>", { desc = "Terminal flotante" })
+    -- end,
   },
 }
 ```
