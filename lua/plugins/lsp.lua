@@ -48,7 +48,7 @@ return {
       on_attach = on_attach, -- Reutilizamos la misma función on_attach
       capabilities = require('cmp_nvim_lsp').default_capabilities(),
       -- cmd = {"clangd"}, -- Mason usualmente maneja esto. No es necesario si Mason está funcionando.
-      -- filetypes = {"c", "cpp", "objc", "objcpp", "cuda"}, -- Mason también suele manejar esto.
+      filetypes = {"c", "cpp", "objc", "objcpp", "cuda"}, -- Mason también suele manejar esto.
     })
     -- >>> Lenguaje SQL añadido
     require("lspconfig").sqlls.setup({
@@ -64,6 +64,7 @@ return {
         --}
       --}
   -- Para empezar, no necesitamos settings específicos.
+    filetypes = { "sql", "mysql", "plsql" },
 })
 end
 }
