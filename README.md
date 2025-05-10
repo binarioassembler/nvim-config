@@ -9,7 +9,6 @@ Esta es la configuración base de mi terminal en NeoVim, ¡en constante evoluci�
 *   📂 **ftplugin**
     *   📄 `c.lua`
     *   📄 `cpp.lua`
-    *   📄 `lua.lua`
 *   📂 **lua**
     *   📂 **config**
         *   📂 **plugins**
@@ -49,6 +48,7 @@ Este es el punto de entrada principal de la configuración.
 
 ```lua
 require("config")
+--require("config.lazy") de la última versión
 vim.api.nvim_create_user_command("Binario", function()
   local picker = require("telescope.pickers")
   local finders = require("telescope.finders")
@@ -88,19 +88,12 @@ Ajustes para archivos C.
 
 ```lua
 -- ~/.config/nvim/ftplugin/c.lua
--- vim.notify("INTENTO DE CARGA: ftplugin/c.lua - Filetype buffer: " .. vim.bo.filetype, vim.log.levels.ERROR, {title = "DIAGNÓSTICO INICIAL"})
-
 if vim.bo.filetype ~= 'c' then
-  -- vim.notify("GUARDA C: No es filetype 'c' (es '" .. vim.bo.filetype .. "'), saliendo de ftplugin/c.lua.", vim.log.levels.ERROR, {title = "C DEBUG"})
   return
 end
 
--- vim.notify("GUARDA C: Filetype ES 'c', procediendo en ftplugin/c.lua.", vim.log.levels.ERROR, {title = "C DEBUG"})
-
-vim.bo.tabstop = 2
-vim.bo.softtabstop = 2
-vim.bo.shiftwidth = 2
-vim.bo.expandtab = true
+-- Las opciones de indentación ahora son globales y se establecen en lua/config/settings.lua.
+-- Solo mantenemos aquí lo específico para C que NO sea indentación, como las funciones de compilación.
 
 local function compile_and_run_c_toggleterm()
   vim.cmd('write')
@@ -108,8 +101,6 @@ local function compile_and_run_c_toggleterm()
   local executable_name_base = vim.fn.expand('%:t:r')
   local file_dir = vim.fn.expand('%:p:h')
   local executable_fullpath = file_dir .. "/" .. executable_name_base
-
-  -- vim.notify("FUNCIÓN C: compile_and_run_c_toggleterm LLAMADA. Filetype buffer: " .. vim.bo.filetype, vim.log.levels.ERROR, {title = "C DEBUG"})
 
   local compile_flags_c = "-std=c11 -Wall -Wextra -pedantic"
   local command_to_run_c = string.format(
@@ -119,7 +110,6 @@ local function compile_and_run_c_toggleterm()
     vim.fn.shellescape(executable_fullpath),
     vim.fn.shellescape(executable_fullpath)
   )
-  -- vim.notify("FUNCIÓN C: Comando construido: " .. command_to_run_c, vim.log.levels.ERROR, {title = "C DEBUG"})
 
   local command_to_run = command_to_run_c
 
@@ -127,7 +117,6 @@ local function compile_and_run_c_toggleterm()
   if not toggleterm_module or not toggleterm_module.Terminal then
     local tt_setup_ok, toggleterm_setup = pcall(require, "toggleterm.terminal")
     if not tt_setup_ok or not toggleterm_setup or not toggleterm_setup.Terminal then
-        -- vim.notify("toggleterm.nvim o su módulo Terminal no está disponible.", vim.log.levels.ERROR, {title = "C DEBUG"})
         vim.api.nvim_err_writeln("Error: toggleterm.nvim no está disponible para ftplugin/c.lua")
         return
     else
@@ -139,7 +128,7 @@ local function compile_and_run_c_toggleterm()
     dir = file_dir,
     direction = "float",
     hidden = true,
-    id = 1002,
+    id = 1002, -- Asegúrate de que este ID sea único si tienes otros terminales definidos así
     on_open = function(opened_term)
       vim.api.nvim_buf_set_keymap(opened_term.bufnr, "n", "q", "<cmd>close<CR>", { noremap = true, silent = true })
       vim.api.nvim_buf_set_keymap(opened_term.bufnr, "t", "<Esc>", "<C-\\><C-n><cmd>close<CR>", { noremap = true, silent = true })
@@ -156,8 +145,6 @@ local function compile_only_c_toggleterm()
   local executable_name_base = vim.fn.expand('%:t:r')
   local file_dir = vim.fn.expand('%:p:h')
   local executable_fullpath = file_dir .. "/" .. executable_name_base
-
-  -- vim.notify("FUNCIÓN C: compile_only_c_toggleterm LLAMADA. Filetype buffer: " .. vim.bo.filetype, vim.log.levels.ERROR, {title = "C DEBUG"})
   
   local compile_flags_c = "-std=c11 -Wall -Wextra -pedantic"
   local command_to_run_c_only = string.format(
@@ -168,7 +155,6 @@ local function compile_only_c_toggleterm()
     vim.fn.basename(current_file_fullpath),
     vim.fn.basename(current_file_fullpath)
   )
-  -- vim.notify("FUNCIÓN C: Comando (solo compilar) construido: " .. command_to_run_c_only, vim.log.levels.ERROR, {title = "C DEBUG"})
   
   local command_to_run = command_to_run_c_only
 
@@ -176,7 +162,6 @@ local function compile_only_c_toggleterm()
   if not toggleterm_module or not toggleterm_module.Terminal then
     local tt_setup_ok, toggleterm_setup = pcall(require, "toggleterm.terminal")
     if not tt_setup_ok or not toggleterm_setup or not toggleterm_setup.Terminal then
-        -- vim.notify("toggleterm.nvim o su módulo Terminal no está disponible.", vim.log.levels.ERROR, {title = "C DEBUG"})
         vim.api.nvim_err_writeln("Error: toggleterm.nvim no está disponible para ftplugin/c.lua")
         return
     else
@@ -188,7 +173,7 @@ local function compile_only_c_toggleterm()
     dir = file_dir,
     direction = "float",
     hidden = true,
-    id = 1004,
+    id = 1004, -- Asegúrate de que este ID sea único
     on_open = function(opened_term)
       vim.api.nvim_buf_set_keymap(opened_term.bufnr, "n", "q", "<cmd>close<CR>", { noremap = true, silent = true })
       vim.api.nvim_buf_set_keymap(opened_term.bufnr, "t", "<Esc>", "<C-\\><C-n><cmd>close<CR>", { noremap = true, silent = true })
@@ -198,8 +183,6 @@ local function compile_only_c_toggleterm()
   term:toggle()
 end
 vim.keymap.set('n', '<leader>rC', compile_only_c_toggleterm, { buffer = true, noremap = true, silent = true, desc = "Compile Only C (ToggleTerm)" })
-
--- vim.notify("FIN DE CARGA: ftplugin/c.lua", vim.log.levels.ERROR, {title = "DIAGNÓSTICO FINAL"})
 ```
 
 #### 📄 `ftplugin/cpp.lua`
@@ -207,54 +190,48 @@ vim.keymap.set('n', '<leader>rC', compile_only_c_toggleterm, { buffer = true, no
 Ajustes para archivos C++.
 
 ```lua
--- ~/.config/nvim/ftplugin/cpp.lua
--- vim.notify("INTENTO DE CARGA: ftplugin/cpp.lua - Filetype buffer: " .. vim.bo.filetype, vim.log.levels.ERROR, {title = "DIAGNÓSTICO INICIAL"})
+-- ~/.config/nvim/ftplugin/c.lua
+if vim.bo.filetype ~= 'c' then
+  return
+end
 
-vim.bo.tabstop = 2
-vim.bo.softtabstop = 2
-vim.bo.shiftwidth = 2
-vim.bo.expandtab = true
+-- Las opciones de indentación ahora son globales y se establecen en lua/config/settings.lua.
+-- Solo mantenemos aquí lo específico para C que NO sea indentación, como las funciones de compilación.
 
-local function compile_and_run_cpp_toggleterm()
+local function compile_and_run_c_toggleterm()
   vim.cmd('write')
-
   local current_file_fullpath = vim.fn.expand('%:p')
   local executable_name_base = vim.fn.expand('%:t:r')
   local file_dir = vim.fn.expand('%:p:h')
   local executable_fullpath = file_dir .. "/" .. executable_name_base
 
-  -- vim.notify("FUNCIÓN CPP: compile_and_run_cpp_toggleterm LLAMADA. Filetype buffer: " .. vim.bo.filetype, vim.log.levels.ERROR, {title = "CPP DEBUG"})
-  
-  local compile_flags_cpp = "-std=c++17 -Wall -Wextra -pedantic"
-  local command_to_run_cpp = string.format(
-    "if g++ %s %s -o %s; then clear; %s; echo ''; echo '--- Ejecución finalizada. ---'; else echo ''; echo '--- COMPILACIÓN FALLIDA ---'; fi; echo ''; echo 'Presiona Enter.'; read -n 1 -s -r",
-    compile_flags_cpp,
+  local compile_flags_c = "-std=c11 -Wall -Wextra -pedantic"
+  local command_to_run_c = string.format(
+    "if gcc %s %s -o %s; then clear; %s; echo ''; echo '--- Ejecución finalizada. ---'; else echo ''; echo '--- COMPILACIÓN FALLIDA ---'; fi; echo ''; echo 'Presiona tecla Enter.'; read -n 1 -s -r",
+    compile_flags_c,
     vim.fn.shellescape(current_file_fullpath),
     vim.fn.shellescape(executable_fullpath),
     vim.fn.shellescape(executable_fullpath)
   )
-  -- vim.notify("FUNCIÓN CPP: Comando construido: " .. command_to_run_cpp, vim.log.levels.ERROR, {title = "CPP DEBUG"})
 
-  local command_to_run = command_to_run_cpp
+  local command_to_run = command_to_run_c
 
   local toggleterm_module = require("toggleterm")
   if not toggleterm_module or not toggleterm_module.Terminal then
     local tt_setup_ok, toggleterm_setup = pcall(require, "toggleterm.terminal")
     if not tt_setup_ok or not toggleterm_setup or not toggleterm_setup.Terminal then
-        -- vim.notify("toggleterm.nvim o su módulo Terminal no está disponible.", vim.log.levels.ERROR, {title = "CPP DEBUG"})
-        vim.api.nvim_err_writeln("Error: toggleterm.nvim no está disponible para ftplugin/cpp.lua") -- Alternativa más visible si falla
+        vim.api.nvim_err_writeln("Error: toggleterm.nvim no está disponible para ftplugin/c.lua")
         return
     else
         toggleterm_module = toggleterm_setup
     end
   end
-
   local term = toggleterm_module.Terminal:new({
     cmd = command_to_run,
     dir = file_dir,
     direction = "float",
     hidden = true,
-    id = 1001,
+    id = 1002, -- Asegúrate de que este ID sea único si tienes otros terminales definidos así
     on_open = function(opened_term)
       vim.api.nvim_buf_set_keymap(opened_term.bufnr, "n", "q", "<cmd>close<CR>", { noremap = true, silent = true })
       vim.api.nvim_buf_set_keymap(opened_term.bufnr, "t", "<Esc>", "<C-\\><C-n><cmd>close<CR>", { noremap = true, silent = true })
@@ -263,37 +240,32 @@ local function compile_and_run_cpp_toggleterm()
   })
   term:toggle()
 end
+vim.keymap.set('n', '<leader>rt', compile_and_run_c_toggleterm, { buffer = true, noremap = true, silent = true, desc = "Compile & Run C (ToggleTerm)" })
 
-vim.keymap.set('n', '<leader>rt', compile_and_run_cpp_toggleterm, { buffer = true, noremap = true, silent = true, desc = "Compile & Run C++ (ToggleTerm)" })
-
-local function compile_only_cpp_toggleterm()
+local function compile_only_c_toggleterm()
   vim.cmd('write')
   local current_file_fullpath = vim.fn.expand('%:p')
   local executable_name_base = vim.fn.expand('%:t:r')
   local file_dir = vim.fn.expand('%:p:h')
   local executable_fullpath = file_dir .. "/" .. executable_name_base
-
-  -- vim.notify("FUNCIÓN CPP: compile_only_cpp_toggleterm LLAMADA. Filetype buffer: " .. vim.bo.filetype, vim.log.levels.ERROR, {title = "CPP DEBUG"})
-
-  local compile_flags_cpp = "-std=c++17 -Wall -Wextra -pedantic"
-  local command_to_run_cpp_only = string.format(
-    "if g++ %s %s -o %s; then echo 'Compilación de %s exitosa!'; else echo 'Error: compilación de %s fallida.'; fi; echo ''; echo 'Presiona cualquier tecla para cerrar esta ventana.'; read -n 1 -s -r",
-    compile_flags_cpp,
+  
+  local compile_flags_c = "-std=c11 -Wall -Wextra -pedantic"
+  local command_to_run_c_only = string.format(
+    "if gcc %s %s -o %s; then echo 'Compilación de %s exitosa!'; else echo 'Error: compilación de %s fallida.'; fi; echo ''; echo 'Presiona cualquier tecla para cerrar esta ventana.'; read -n 1 -s -r",
+    compile_flags_c,
     vim.fn.shellescape(current_file_fullpath),
     vim.fn.shellescape(executable_fullpath),
     vim.fn.basename(current_file_fullpath),
     vim.fn.basename(current_file_fullpath)
   )
-  -- vim.notify("FUNCIÓN CPP: Comando (solo compilar) construido: " .. command_to_run_cpp_only, vim.log.levels.ERROR, {title = "CPP DEBUG"})
   
-  local command_to_run = command_to_run_cpp_only
+  local command_to_run = command_to_run_c_only
 
   local toggleterm_module = require("toggleterm")
   if not toggleterm_module or not toggleterm_module.Terminal then
     local tt_setup_ok, toggleterm_setup = pcall(require, "toggleterm.terminal")
     if not tt_setup_ok or not toggleterm_setup or not toggleterm_setup.Terminal then
-        -- vim.notify("toggleterm.nvim o su módulo Terminal no está disponible.", vim.log.levels.ERROR, {title = "CPP DEBUG"})
-        vim.api.nvim_err_writeln("Error: toggleterm.nvim no está disponible para ftplugin/cpp.lua")
+        vim.api.nvim_err_writeln("Error: toggleterm.nvim no está disponible para ftplugin/c.lua")
         return
     else
         toggleterm_module = toggleterm_setup
@@ -304,7 +276,7 @@ local function compile_only_cpp_toggleterm()
     dir = file_dir,
     direction = "float",
     hidden = true,
-    id = 1003,
+    id = 1004, -- Asegúrate de que este ID sea único
     on_open = function(opened_term)
       vim.api.nvim_buf_set_keymap(opened_term.bufnr, "n", "q", "<cmd>close<CR>", { noremap = true, silent = true })
       vim.api.nvim_buf_set_keymap(opened_term.bufnr, "t", "<Esc>", "<C-\\><C-n><cmd>close<CR>", { noremap = true, silent = true })
@@ -313,20 +285,7 @@ local function compile_only_cpp_toggleterm()
   })
   term:toggle()
 end
-vim.keymap.set('n', '<leader>rC', compile_only_cpp_toggleterm, { buffer = true, noremap = true, silent = true, desc = "Compile Only C++ (ToggleTerm)" })
-
--- vim.notify("FIN DE CARGA: ftplugin/cpp.lua", vim.log.levels.ERROR, {title = "DIAGNÓSTICO FINAL"})
-```
-
-#### 📄 `ftplugin/lua.lua`
-
-Ajustes para archivos Lua.
-
-```lua
-vim.bo.tabstop = 2
-vim.bo.softtabstop = 2
-vim.bo.expandtab = true
-vim.bo.shiftwidth = 2
+vim.keymap.set('n', '<leader>rC', compile_only_c_toggleterm, { buffer = true, noremap = true, silent = true, desc = "Compile Only C (ToggleTerm)" })
 ```
 
 ---
@@ -345,6 +304,7 @@ Inicializa las configuraciones básicas y el gestor de plugins.
 
 ```lua
 require "config.settings"
+require "config.keymaps"
 require "config.lazy"
 ```
 
@@ -353,15 +313,105 @@ require "config.lazy"
 Definición de atajos de teclado globales y específicos.
 
 ```lua
+-- lua/config/keymaps.lua
+
+-- === TUS MAPEOS GLOBALES EXISTENTES (NO SE TOCAN) ===
 vim.keymap.set('n', '<leader>bd', ':bd!<cr>', {desc = "Close current buffer" })
-
 vim.keymap.set('', '<leader>rr', ':source %<cr>', { desc = "Source the current file" })
-
 vim.keymap.set('v', '>', '>gv', { desc = "after tab in re-select the same"})
 vim.keymap.set('v', '<', '<gv', { desc = "after tab out re-select the same"})
-
 vim.keymap.set('n', 'n', 'nzzzv', { desc = "Goes to the next result on the seach and put the cursor in the middle"})
 vim.keymap.set('n', 'N', 'Nzzzv', { desc = "Goes to the prev result on the seach and put the cursor in the middle"})
+
+-- >>> INICIO: MAPEO SIMPLIFICADO PARA LIVE SERVER <<<
+vim.keymap.set('n', '<leader>op', function()
+  local current_ft = vim.bo.filetype
+  if current_ft ~= 'html' and current_ft ~= 'htmldjango' and current_ft ~= 'markdown' then
+    vim.notify("Comando <leader>op principalmente para archivos HTML/Markdown.", vim.log.levels.WARN, { title = "Live Server" })
+    return 
+  end
+
+  local file_path = vim.fn.expand('%:p')
+  if file_path == '' then
+    vim.notify("No hay un archivo abierto para servir.", vim.log.levels.WARN, { title = "Live Server" })
+    return
+  end
+  local file_dir = vim.fn.expand('%:p:h') 
+  local file_name_to_serve = vim.fn.expand('%:t')
+
+  local tt_status, toggleterm = pcall(require, "toggleterm.terminal")
+  if not tt_status or not toggleterm or not toggleterm.Terminal then
+    vim.api.nvim_err_writeln("Error: toggleterm.nvim no está disponible para el mapeo de live-server.")
+    vim.notify("toggleterm.nvim no está disponible.", vim.log.levels.ERROR, { title = "Live Server" })
+    return
+  end
+
+  local Terminal = toggleterm.Terminal
+  local FIXED_LIVE_SERVER_ID = 2000 -- Un ID numérico fijo para nuestro live-server
+
+  -- Intentar encontrar un terminal existente con el ID fijo
+  local existing_term
+  local all_terms_status, all_terms = pcall(toggleterm.get_all)
+  if all_terms_status and type(all_terms) == "table" then
+    for _, t in ipairs(all_terms) do
+      if t.id == FIXED_LIVE_SERVER_ID then -- Comparar directamente el ID numérico
+        existing_term = t
+        break
+      end
+    end
+  end
+
+  if existing_term then
+    if existing_term:is_running() then
+      vim.notify("Live-server ya está corriendo (ID: " .. FIXED_LIVE_SERVER_ID .. "). Mostrando terminal.", vim.log.levels.INFO, { title = "Live Server" })
+      existing_term:open() -- Asegura que esté visible
+      -- Podrías querer que esto también intente refrescar el navegador,
+      -- pero live-server debería hacerlo al guardar archivos.
+    else
+      -- El terminal existe pero el proceso no está corriendo (ej. Ctrl+C en él).
+      -- Podríamos reabrirlo con el mismo comando.
+      vim.notify("Reiniciando Live-server en terminal existente (ID: " .. FIXED_LIVE_SERVER_ID .. ").", vim.log.levels.INFO, { title = "Live Server" })
+      existing_term.cmd = "live-server --open=./" .. vim.fn.shellescape(file_name_to_serve) -- Actualizar comando por si el archivo cambió
+      existing_term.dir = file_dir -- Actualizar directorio por si cambió
+      existing_term:open() -- Reabre y ejecuta el nuevo cmd
+      -- Ocultar después de un retraso
+      vim.defer_fn(function()
+        if existing_term and existing_term:is_open() then existing_term:close() end
+      end, 3000)
+    end
+    return 
+  end
+
+  -- Si no existe, crear uno nuevo
+  vim.notify("Iniciando nuevo Live-server (ID: " .. FIXED_LIVE_SERVER_ID .. ") para: " .. file_name_to_serve, vim.log.levels.INFO, { title = "Live Server" })
+  local cmd_to_run = "live-server --open=./" .. vim.fn.shellescape(file_name_to_serve)
+
+  local term_instance = Terminal:new({
+    cmd = cmd_to_run,
+    dir = file_dir,
+    direction = "float", 
+    hidden = false, 
+    close_on_exit = true,
+    id = FIXED_LIVE_SERVER_ID, -- Usar el ID numérico fijo
+    display_name = "Live Server (" .. FIXED_LIVE_SERVER_ID .. ")",
+    on_open = function(opened_terminal)
+      vim.api.nvim_buf_set_keymap(opened_terminal.bufnr, "t", "<esc>", "<c-\\><c-n>", {noremap = true, silent = true})
+      vim.api.nvim_buf_set_keymap(opened_terminal.bufnr, "t", "<C-q>", "<c-\\><c-n><cmd>close<CR>", {noremap = true, silent = true})
+      vim.notify("Live-server iniciado (ID: " .. FIXED_LIVE_SERVER_ID .. "). Terminal se ocultará.", vim.log.levels.INFO, { title = "Live Server" })
+      
+      vim.defer_fn(function()
+        if opened_terminal and opened_terminal:is_open() then
+          opened_terminal:close() 
+        end
+      end, 3000)
+    end,
+    on_close = function() 
+      vim.notify("Proceso de Live-server (ID: ".. FIXED_LIVE_SERVER_ID ..") detenido.", vim.log.levels.INFO, { title = "Live Server" })
+    end
+  })
+  term_instance:open()
+
+end, { desc = "Open/Toggle Live Server (ToggleTerm)" })
 ```
 
 ##### 📄 `lua/config/lazy.lua`
@@ -369,6 +419,8 @@ vim.keymap.set('n', 'N', 'Nzzzv', { desc = "Goes to the prev result on the seach
 Configuración del gestor de plugins `lazy.nvim`.
 
 ```lua
+-- lua/config/lazy.lua
+
 -- Bootstrap lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
@@ -400,7 +452,7 @@ require("lazy").setup({
   },
   -- Configure any other settings here. See the documentation for more details.
   -- colorscheme that will be used when installing plugins.
-  install = { colorscheme = { "habamax" } },
+  install = { colorscheme = { "catppuccin" } }, -- MODIFICADO AQUÍ
   -- automatically check for plugin updates
   checker = { enabled = true },
 })
@@ -411,10 +463,22 @@ require("lazy").setup({
 Configuraciones generales de Neovim (opciones).
 
 ```lua
+-- lua/config/settings.lua
 vim.o.number = true
 vim.o.relativenumber = true
 vim.g.mapleader = " "
 vim.o.termguicolors = true
+
+-- >>> INICIO: CONFIGURACIÓN DE INDENTACIÓN GLOBAL POR DEFECTO <<<
+vim.opt.tabstop = 2       -- Número de espacios que representa un <Tab>
+vim.opt.softtabstop = 2   -- Número de espacios para <Tab> y <Backspace> en modo inserción
+vim.opt.shiftwidth = 2    -- Número de espacios para indentación automática (>>, <<)
+vim.opt.expandtab = true  -- Usar espacios en lugar de caracteres Tab literales
+vim.opt.autoindent = true -- Copiar indentación de la línea actual al crear una nueva
+vim.opt.smartindent = true -- Hacer indentación más inteligente para algunos lenguajes (ej. C)
+-- >>> FIN: CONFIGURACIÓN DE INDENTACIÓN GLOBAL POR DEFECTO <<<
+
+-- Aquí podrían ir otras configuraciones globales que tengas o quieras añadir en el futuro.
 ```
 
 ---
@@ -450,7 +514,30 @@ function M.setup()
         local KIND_ICONS = {
           Tailwind = '󰹞󰹞󰹞󰹞󰹞󰹞󰹞󰹞',
           Color = ' ',
+          -- Class = 7,
+          -- Constant = '󰚞',
+          -- Constructor = 4,
+          -- Enum = 13,
+          -- EnumMember = 20,
+          -- Event = 23,
+          -- Field = 5,
+          -- File = 17,
+          -- Folder = 19,
+          -- Function = 3,
+          -- Interface = 8,
+          -- Keyword = 14,
+          -- Method = 2,
+          -- Module = 9,
+          -- Operator = 24,
+          -- Property = 10,
+          -- Reference = 18,
           Snippet = " ",
+          -- Struct = 22,
+          -- Text = "",
+          -- TypeParameter = 25,
+          -- Unit = 11,
+          -- Value = 12,
+          -- Variable = 6
         }
         if vim_item.kind == 'Color' and entry.completion_item.documentation then
           local _, _, r, g, b =
@@ -458,6 +545,7 @@ function M.setup()
               string.find(entry.completion_item.documentation, '^rgb%((%d+), (%d+), (%d+)')
 		  local color
 
+		  -- The next conditional is for the new tailwindcss version.
           if r and g and b then
 			color = string.format('%02x', r) .. string.format('%02x', g) .. string.format('%02x', b)
 		  else
@@ -515,14 +603,16 @@ function M.setup()
 
   cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done { map_char = { tex = "" } })
 
+  -- Set configuration for specific filetype.
   cmp.setup.filetype('gitcommit', {
     sources = cmp.config.sources({
-      { name = 'git' },
+      { name = 'git' }, -- You can specify the `git` source if [you were installed it](https://github.com/petertriho/cmp-git).
     }, {
       { name = 'buffer' },
     })
   })
 
+  -- Use buffer source for `/` and `?` (if you enabled `native_menu`, this won't work anymore).
   cmp.setup.cmdline({ '/', '?' }, {
     mapping = cmp.mapping.preset.cmdline(),
     sources = {
@@ -530,6 +620,7 @@ function M.setup()
     }
   })
 
+  -- Use cmdline & path source for ':' (if you enabled `native_menu`, this won't work anymore).
   cmp.setup.cmdline(':', {
     mapping = cmp.mapping.preset.cmdline(),
     sources = cmp.config.sources({
@@ -555,9 +646,16 @@ local M = {}
 
 function M.setup()
   ls.config.set_config {
+    -- This tells LuaSnip to remember to keep around the last snippet.
+    -- You can jump back into even if you move outside of the selection
     history = true,
+
+    -- This one is cool cause if you have dynamic snippets, it updatesas you type!
     updateevents = "TextChanged,TextChangedI",
+
+    -- Autosnippets:
     enable_autosnippets = true,
+
     ext_opts = {
       [types.choiceNode] = {
         active = {
@@ -567,18 +665,24 @@ function M.setup()
     },
   }
 
+  -- <c-k> is my expansion key
+  -- this will expand the current item or jump to the next item within the snippet.
   vim.keymap.set({ "i", "s" }, "<c-k>", function()
     if ls.expand_or_jumpable() then
       ls.expand_or_jump()
     end
   end, { silent = true })
 
+  -- <c-j> is my jump backwards key.
+  -- this always moves to the previous item within the snippet
   vim.keymap.set({ "i", "s" }, "<c-j>", function()
     if ls.jumpable(-1) then
       ls.jump(-1)
     end
   end, { silent = true })
 
+  -- <c-l> is selecting within a list of options.
+  -- This is useful for choice nodes (introduced in the forthcoming episode 2)
   vim.keymap.set("i", "<c-l>", function()
     if ls.choice_active() then
       ls.change_choice(1)
@@ -613,14 +717,14 @@ return {
     "windwp/nvim-autopairs",
   },
   event = "VeryLazy",
-  main = "config.plugins.cmp", -- Carga la configuración desde lua/config/plugins/cmp.lua
+  main = "config.plugins.cmp",
   config = true,
 }
 ```
 
 ##### 📄 `lua/plugins/colorscheme.lua`
 
-Plugin: `vim-enfocado` (tema de colores).
+Plugin: `vim-catppuccin` (tema de colores).
 
 ```lua
 -- lua/plugins/colorscheme.lua
@@ -779,6 +883,7 @@ return {
 Plugin: `nvim-lspconfig` (configuración para Language Server Protocol).
 
 ```lua
+-- lua/plugins/lsp.lua
 return {
   "neovim/nvim-lspconfig",
   dependencies = {
@@ -786,11 +891,13 @@ return {
     "folke/neodev.nvim",
   },
   config = function()
+    -- === MAPEOS GLOBALES DE LSP ===
     vim.keymap.set('n', '<space>e', vim.diagnostic.open_float)
     vim.keymap.set('n', '[d', vim.diagnostic.goto_prev)
     vim.keymap.set('n', ']d', vim.diagnostic.goto_next)
     vim.keymap.set('n', '<space>q', vim.diagnostic.setloclist)
 
+    -- === FUNCIÓN ON_ATTACH ===
     local on_attach = function(_, bufnr)
       vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
       local opts = { buffer = bufnr }
@@ -813,10 +920,15 @@ return {
       end, { buffer= bufnr, desc = "Format code (LSP)"})
     end
 
+    -- === REQUIRES Y VARIABLES LOCALES PARA LSP ===
+    local lspconfig = require("lspconfig") -- Definir UNA VEZ aquí
+    local cmp_capabilities = require('cmp_nvim_lsp').default_capabilities() -- Definir UNA VEZ aquí
+
+    -- === CONFIGURACIONES LSP EXISTENTES ===
     require("neodev").setup()
-    require("lspconfig").lua_ls.setup({
+    lspconfig.lua_ls.setup({ -- Usar la variable local 'lspconfig'
       on_attach = on_attach,
-      capabilities = require('cmp_nvim_lsp').default_capabilities(),
+      capabilities = cmp_capabilities, -- Usar la variable local 'cmp_capabilities'
       settings = {
         Lua = {
           telemetry = { enable = false },
@@ -824,10 +936,51 @@ return {
         }
       }
     })
-    require("lspconfig").clangd.setup({
+
+    lspconfig.clangd.setup({ -- Usar la variable local 'lspconfig'
       on_attach = on_attach,
-      capabilities = require('cmp_nvim_lsp').default_capabilities(),
+      capabilities = cmp_capabilities, -- Usar la variable local 'cmp_capabilities'
+      filetypes = {"c", "cpp", "objc", "objcpp", "cuda"},
     })
+
+    lspconfig.sqlls.setup({ -- Usar la variable local 'lspconfig'
+      on_attach = on_attach,
+      capabilities = cmp_capabilities, -- Usar la variable local 'cmp_capabilities'
+      filetypes = { "sql", "mysql", "plsql" },
+    })
+
+    -- >>> NUEVA CONFIGURACIÓN PARA HTML, CSS, JS Y EMMET <<<
+
+    lspconfig.html.setup({ -- Usar la variable local 'lspconfig'
+      on_attach = on_attach,
+      capabilities = cmp_capabilities, -- Usar la variable local 'cmp_capabilities'
+    })
+
+    lspconfig.cssls.setup({ -- Usar la variable local 'lspconfig'
+      on_attach = on_attach,
+      capabilities = cmp_capabilities, -- Usar la variable local 'cmp_capabilities'
+    })
+
+    lspconfig.ts_ls.setup({ -- Usar la variable local 'lspconfig'
+      on_attach = on_attach,
+      capabilities = cmp_capabilities, -- Usar la variable local 'cmp_capabilities'
+    })
+
+    lspconfig.emmet_ls.setup({ -- Usar la variable local 'lspconfig'
+      on_attach = on_attach,
+      capabilities = cmp_capabilities, -- Usar la variable local 'cmp_capabilities'
+      filetypes = {
+        "html", "css", "scss", "less", "sass", "javascript", "javascriptreact",
+        "typescriptreact", "haml", "xml", "xsl", "pug", "slim", "svelte", "vue",
+      },
+      cmd = { 
+        "node", 
+        "/home/binario/.local/share/nvim/mason/packages/emmet-language-server/node_modules/.bin/emmet-language-server", 
+        "--stdio" 
+      }
+    })
+    -- >>> FIN DE LA NUEVA CONFIGURACIÓN <<<
+
   end
 }
 ```
@@ -874,7 +1027,7 @@ Plugin: `mason.nvim` (gestor de LSPs, linters, formatters).
 ```lua
 return {
   "williamboman/mason.nvim",
-  config = true, -- O usa `opts = {}` si no hay configuración específica aquí
+  config = true,
 }
 ```
 
@@ -883,35 +1036,110 @@ return {
 Plugin: `none-ls.nvim` (antes null-ls, para linters y formatters como fuentes LSP).
 
 ```lua
+-- lua/plugins/none-ls.lua
 return {
   "nvimtools/none-ls.nvim",
-  event = { "BufReadPre", "BufNewFile" },
+  -- Vuelve a tu configuración de carga preferida, ej:
+  event = { "BufReadPre", "BufNewFile" }, 
+  -- lazy = false, -- Comenta o elimina esto si lo pusiste para depurar
   dependencies = {
     "nvim-lua/plenary.nvim",
     "nvimtools/none-ls-extras.nvim",
   },
   config = function()
-    local null_ls = require("null-ls")
-    local B = null_ls.builtins
+    -- vim.notify("none-ls: Iniciando función config...", vim.log.levels.INFO) -- DEBUG
 
-    null_ls.setup({
-      sources = {
-        B.formatting.clang_format.with({
-          -- extra_args = {"--style=file"},
-        }),
-      },
-      -- on_attach = function(client, bufnr)
-      --   if client.supports_method("textDocument/formatting") then
-      --     vim.api.nvim_create_autocmd("BufWritePre", {
-      --       buffer = bufnr,
-      --       callback = function()
-      --         vim.lsp.buf.format({ bufnr = bufnr, async = false, timeout_ms = 2000 })
-      --       end,
-      --       desc = "Format on save (none-ls)",
-      --     })
-      --   end
-      -- end,
-    })
+    local null_ls_ok, null_ls = pcall(require, "null-ls")
+    if not null_ls_ok then
+      vim.notify("Error: none-ls (null-ls) no pudo ser requerido: " .. tostring(null_ls), vim.log.levels.ERROR)
+      return
+    end
+    -- vim.notify("none-ls: Módulo 'null-ls' requerido.", vim.log.levels.INFO) -- DEBUG
+
+    local builtins_ok, B = pcall(function() return null_ls.builtins end)
+    if not builtins_ok then
+      vim.notify("Error: null_ls.builtins no está disponible: " .. tostring(B), vim.log.levels.ERROR)
+      return
+    end
+    -- vim.notify("none-ls: Módulo 'null-ls.builtins' accesible.", vim.log.levels.INFO) -- DEBUG
+
+    local sources = {}
+    local eslint_source_ok, eslint_source
+
+    -- 1. CLANG FORMAT
+    if B.formatting.clang_format then
+        table.insert(sources, B.formatting.clang_format)
+        -- vim.notify("none-ls: clang_format añadido desde builtins.", vim.log.levels.INFO) -- DEBUG
+    else
+        vim.notify("none-ls: B.formatting.clang_format NO disponible.", vim.log.levels.WARN)
+    end
+
+    -- 2. ESLINT (eslint_d o eslint)
+    eslint_source_ok, eslint_source = pcall(require, "none-ls.diagnostics.eslint_d")
+    if not eslint_source_ok then
+      eslint_source_ok, eslint_source = pcall(require, "none-ls.diagnostics.eslint")
+    end
+
+    if eslint_source_ok and eslint_source then
+      -- vim.notify("none-ls: Fuente eslint/eslint_d REQUERIDA exitosamente.", vim.log.levels.INFO) -- DEBUG
+      local eslint_exec = vim.fn.executable("eslint_d") == 1 and "eslint_d" or (vim.fn.executable("eslint") == 1 and "eslint" or nil)
+      if eslint_exec then
+          local eslint_path = vim.fn.trim(vim.fn.system("which " .. eslint_exec))
+          table.insert(sources, eslint_source.with({
+              command = eslint_path,
+              condition = function(utils)
+                return utils.root_has_file({ ".eslintrc.js", ".eslintrc.json", "package.json" })
+              end,
+              diagnostics_format = '[eslint] #{m} (#{c})' -- Puedes mantener o quitar el '_d' aquí
+          }))
+          -- vim.notify("none-ls: " .. eslint_exec .. " configurado y añadido a sources.", vim.log.levels.INFO) -- DEBUG
+      else
+          vim.notify("none-ls: No se encontró ejecutable para eslint ni eslint_d. Intentando añadir fuente sin 'command'.", vim.log.levels.WARN)
+          table.insert(sources, eslint_source)
+      end
+    else
+      vim.notify("none-ls: No se pudo REQUERIR ninguna fuente eslint/eslint_d.", vim.log.levels.ERROR)
+    end
+
+    -- 3. STYLELINT
+    if B.diagnostics.stylelint then
+      -- vim.notify("none-ls: Builtin B.diagnostics.stylelint ENCONTRADO.", vim.log.levels.INFO) -- DEBUG
+      local stylelint_path = vim.fn.trim(vim.fn.system("which stylelint"))
+      if vim.v.shell_error == 0 and stylelint_path ~= "" then
+        -- vim.notify("none-ls: Path para stylelint: " .. stylelint_path, vim.log.levels.INFO) -- DEBUG
+        table.insert(sources, B.diagnostics.stylelint.with({
+          command = stylelint_path,
+          condition = function(utils)
+            return utils.root_has_file({ ".stylelintrc.json", ".stylelintrc.js", "stylelint.config.js", "package.json"})
+          end,
+          diagnostics_format = '[stylelint] #{m}'
+        }))
+        -- vim.notify("none-ls: stylelint añadido a sources con path.", vim.log.levels.INFO) -- DEBUG
+      else
+        vim.notify("none-ls: stylelint NO encontrado en PATH, intentando sin path explícito.", vim.log.levels.WARN)
+        table.insert(sources, B.diagnostics.stylelint)
+        -- vim.notify("none-ls: stylelint añadido a sources (sin path explícito).", vim.log.levels.INFO) -- DEBUG
+      end
+    else
+      vim.notify("none-ls: Builtin B.diagnostics.stylelint NO ENCONTRADO.", vim.log.levels.ERROR)
+    end
+
+    -- Configuración de none-ls
+    if #sources > 0 then
+      null_ls.setup({
+        -- debug = true, -- Cambia a false cuando ya no necesites depurar
+        debug = false, 
+        sources = sources,
+        -- on_attach = function(client, bufnr) -- Comenta si no quieres la notificación de adjunto
+          -- vim.notify("none-ls: Cliente '" .. client.name .. "' adjunto al buffer " .. bufnr, vim.log.levels.INFO)
+        -- end,
+      })
+      -- local source_names = {}
+      -- for _, s_obj in ipairs(sources) do table.insert(source_names, s_obj.name or "fuente_sin_nombre") end
+      -- vim.notify("none-ls.nvim configurado con fuentes: " .. table.concat(source_names, ", "), vim.log.levels.INFO) -- DEBUG
+    else
+      vim.notify("none-ls: Ninguna fuente válida para configurar.", vim.log.levels.ERROR)
+    end
   end,
 }
 ```
@@ -927,7 +1155,9 @@ return {
   event = "VeryLazy",
   config = function()
     local notify = require "notify"
+    -- this for transparency
     notify.setup { background_colour = "#000000" }
+    -- this overwrites the vim notify function
     vim.notify = notify.notify
   end,
 }
@@ -947,29 +1177,61 @@ return {
     {
       'nvim-telescope/telescope-fzf-native.nvim',
       build = 'make'
-    }
-  },
+    } },
   opts = {
     extensions = {
       fzf = {
-        fuzzy = true,
-        override_generic_sorter = true,
-        override_file_sorter = true,
-        case_mode = "smart_case",
+        fuzzy = true,                   -- false will only do exact matching
+        override_generic_sorter = true, -- override the generic sorter
+        override_file_sorter = true,    -- override the file sorter
+        case_mode = "smart_case",       -- or "ignore_case" or "respect_case"
+        -- the default case_mode is "smart_case"
       },
     }
   },
-  config = function(_, opts) -- El primer argumento es el plugin spec, el segundo son las opts
+  config = function(opts)
     require('telescope').setup(opts)
     require('telescope').load_extension('fzf')
   end,
   keys = {
-    { "<leader>pp", function() require('telescope.builtin').git_files({ show_untracked = true }) end, desc = "Telescope Git Files" },
-    { "<leader>pe", function() require("telescope.builtin").buffers() end, desc = "Telescope buffers" },
-    { "<leader>gs", function() require("telescope.builtin").git_status() end, desc = "Telescope Git status" },
-    { "<leader>gc", function() require("telescope.builtin").git_bcommits() end, desc = "Telescope Git bcommits" },
-    { "<leader>gb", function() require("telescope.builtin").git_branches() end, desc = "Telescope Git branches" },
-    { "<leader>rp", function()
+    {
+      "<leader>pp",
+      function()
+        require('telescope.builtin').git_files({ show_untracked = true })
+      end,
+      desc = "Telescope Git Files",
+    },
+    {
+      "<leader>pe",
+      function()
+        require("telescope.builtin").buffers()
+      end,
+      desc = "Telescope buffers",
+    },
+    {
+      "<leader>gs",
+      function()
+        require("telescope.builtin").git_status()
+      end,
+      desc = "Telescope Git status",
+    },
+    {
+      "<leader>gc",
+      function()
+        require("telescope.builtin").git_bcommits()
+      end,
+      desc = "Telescope Git status",
+    },
+    {
+      "<leader>gb",
+      function()
+        require("telescope.builtin").git_branches()
+      end,
+      desc = "Telescope Git branches",
+    },
+    {
+      "<leader>rp",
+      function()
         require("telescope.builtin").find_files({
           prompt_title = "Plugins",
           cwd = "~/.config/nvim/lua/plugins",
@@ -984,11 +1246,29 @@ return {
             return true
           end
         })
-      end, desc = "Telescope Plugins (custom)"
+      end
     },
-    { "<leader>pf", function() require('telescope.builtin').find_files() end, desc = "Telescope Find Files" },
-    { "<leader>ph", function() require("telescope.builtin").help_tags() end, desc = "Telescope Help" },
-    { "<leader>bb", function() require("telescope").extensions.file_browser.file_browser({ path = "%:h:p", select_buffer = true }) end, desc = "Telescope file browser" }
+    {
+      "<leader>pf",
+      function()
+        require('telescope.builtin').find_files()
+      end,
+      desc = "Telescope Find Files",
+    },
+    {
+      "<leader>ph",
+      function()
+        require("telescope.builtin").help_tags()
+      end,
+      desc = "Telescope Help"
+    },
+    {
+      "<leader>bb",
+      function()
+        require("telescope").extensions.file_browser.file_browser({ path = "%:h:p", select_buffer = true })
+      end,
+      desc = "Telescope file browser"
+    }
   },
 }
 ```
@@ -999,50 +1279,52 @@ Plugin: `toggleterm.nvim` (notificaciones mejoradas).
 
 ```lua
 -- ~/.config/nvim/lua/plugins/terminal.lua
+-- ~/.config/nvim/lua/plugins/terminal.lua
 return {
   {
     "akinsho/toggleterm.nvim",
-    version = "*", -- o una versión específica si prefieres
+    version = "*",
     opts = {
       size = function(term)
         if term.direction == "horizontal" then
-          return 15 -- Altura para splits horizontales
+          return 15
         elseif term.direction == "vertical" then
-          return vim.o.columns * 0.4 -- Ancho para splits verticales
+          return math.floor(vim.o.columns * 0.4)
         end
-        return 20 -- Tamaño para terminales flotantes (altura si es flotante por defecto)
+        return math.floor(vim.o.lines * 0.6)
       end,
-      open_mapping = [[<c-t>]], -- Atajo para abrir un terminal genérico (Ctrl + t)
-      hide_numbers = true,       -- Ocultar números de línea en el terminal
-      shade_filetypes = {},
+      open_mapping = [[<c-t>]],
+      hide_numbers = true,
       shade_terminals = true,
-      shading_factor = 1, -- Un poco menos de sombreado que el valor por defecto
+      shading_factor = '75', -- Un valor más alto oscurece más los terminales inactivos
       start_in_insert = true,
-      insert_mappings = true, -- Permite usar mapeos de inserción en el terminal
+      insert_mappings = true,
       persist_size = true,
-      direction = 'float', -- Por defecto, los terminales se abrirán como flotantes
-      close_on_exit = true, -- Cerrar la ventana del terminal cuando el proceso termine
-      shell = vim.o.shell, -- Usar el shell configurado en Neovim
+      direction = 'float',
+      close_on_exit = true,
+      shell = vim.o.shell,
+      winbar = {
+        enabled = false,
+      },
       float_opts = {
-        border = 'curved', -- Tipo de borde para terminales flotantes
-        winblend = 0,
+        border = 'curved', -- O 'rounded', 'curved', 'single', etc.
+        title = "Salida del Comando",
+        title_pos = "center",
+        width = function()
+          return math.floor(vim.o.columns * 0.75)
+        end,
+        -- Referenciar los grupos de resaltado definidos en colorscheme.lua
         highlights = {
-          border = "Normal",
-          background = "Normal",
+          border = "ToggleTermBorder",
+          background = "ToggleTermFloatBg", -- Este será el fondo de la VENTANA flotante
+          title = "ToggleTermTitle",
         },
       },
-      -- Mapeos de ventana para cerrar el terminal flotante
-      -- Puedes usar 'q' en modo normal o <Esc> en modo terminal para cerrar
-      winbar = {
-        enabled = false, -- Deshabilitar la winbar para toggleterm si no la usas
-      },
     },
-    -- Configuración opcional, puedes añadir mapeos de teclas aquí si lo prefieres globalmente
-    -- config = function(_, opts)
-    --   require('toggleterm').setup(opts)
-    --   -- Ejemplo de mapeo global para un terminal flotante
-    --   -- vim.keymap.set('n', '<leader>tf', "<cmd>ToggleTerm direction=float<cr>", { desc = "Terminal flotante" })
-    -- end,
+    -- No es necesario un 'config' aquí si solo estamos usando 'opts'
+    -- y los resaltados se definen externamente.
+    -- Si la integración de Catppuccin para toggleterm (en colorscheme.lua) funciona,
+    -- incluso podrías eliminar la sección 'highlights' de aquí y dejar que Catppuccin lo maneje.
   },
 }
 ```
@@ -1070,6 +1352,10 @@ return {
       "cpp",
       "markdown",
       "markdown_inline",
+      "sql",
+      "html",
+      "css",
+      "javascript",
     },
     highlight = {
       enable = true,
@@ -1094,8 +1380,8 @@ return {
     playground = {
       enable = true,
       disable = {},
-      updatetime = 25,
-      persist_queries = false,
+      updatetime = 25,       -- Debounced time for highlighting nodes in the playground from source code
+      persist_queries = false, -- Whether the query persists across vim sessions
       keybindings = {
         toggle_query_editor = 'o',
         toggle_hl_groups = 'i',
