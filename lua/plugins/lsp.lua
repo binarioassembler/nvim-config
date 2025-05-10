@@ -1,3 +1,4 @@
+-- lua/plugins/lsp.lua
 return {
   "neovim/nvim-lspconfig",
   dependencies = {
@@ -5,11 +6,13 @@ return {
     "folke/neodev.nvim",
   },
   config = function()
+    -- === MAPEOS GLOBALES DE LSP ===
     vim.keymap.set('n', '<space>e', vim.diagnostic.open_float)
     vim.keymap.set('n', '[d', vim.diagnostic.goto_prev)
     vim.keymap.set('n', ']d', vim.diagnostic.goto_next)
     vim.keymap.set('n', '<space>q', vim.diagnostic.setloclist)
 
+    -- === FUNCIÓN ON_ATTACH ===
     local on_attach = function(_, bufnr)
       vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
       local opts = { buffer = bufnr }
@@ -32,10 +35,15 @@ return {
       end, { buffer= bufnr, desc = "Format code (LSP)"})
     end
 
+    -- === REQUIRES Y VARIABLES LOCALES PARA LSP ===
+    local lspconfig = require("lspconfig") -- Definir UNA VEZ aquí
+    local cmp_capabilities = require('cmp_nvim_lsp').default_capabilities() -- Definir UNA VEZ aquí
+
+    -- === CONFIGURACIONES LSP EXISTENTES ===
     require("neodev").setup()
-    require("lspconfig").lua_ls.setup({
+    lspconfig.lua_ls.setup({ -- Usar la variable local 'lspconfig'
       on_attach = on_attach,
-      capabilities = require('cmp_nvim_lsp').default_capabilities(),
+      capabilities = cmp_capabilities, -- Usar la variable local 'cmp_capabilities'
       settings = {
         Lua = {
           telemetry = { enable = false },
@@ -43,28 +51,50 @@ return {
         }
       }
     })
-    -- >>> Lenguaje C/C++ añadido
-    require("lspconfig").clangd.setup({
-      on_attach = on_attach, -- Reutilizamos la misma función on_attach
-      capabilities = require('cmp_nvim_lsp').default_capabilities(),
-      -- cmd = {"clangd"}, -- Mason usualmente maneja esto. No es necesario si Mason está funcionando.
-      filetypes = {"c", "cpp", "objc", "objcpp", "cuda"}, -- Mason también suele manejar esto.
+
+    lspconfig.clangd.setup({ -- Usar la variable local 'lspconfig'
+      on_attach = on_attach,
+      capabilities = cmp_capabilities, -- Usar la variable local 'cmp_capabilities'
+      filetypes = {"c", "cpp", "objc", "objcpp", "cuda"},
     })
-    -- >>> Lenguaje SQL añadido
-    require("lspconfig").sqlls.setup({
-    on_attach = on_attach, -- Reutiliza la misma función on_attach
-    capabilities = require('cmp_nvim_lsp').default_capabilities(), -- Reutiliza las mismas capabilities que definiste arriba
-  -- sqlls puede tener configuraciones específicas, pero empecemos con lo básico
-  -- Por ejemplo, para especificar el dialecto si es necesario (opcional):
-      --settings = {
-        --sqlls = {
-          --dialect = "mysql", -- o "postgresql"
-          -- Puedes añadir configuraciones de conexión aquí si el LSP las soporta
-          -- para que conozca tu esquema, pero vim-dadbod ya maneja la conexión.
-        --}
-      --}
-  -- Para empezar, no necesitamos settings específicos.
-    filetypes = { "sql", "mysql", "plsql" },
-})
-end
+
+    lspconfig.sqlls.setup({ -- Usar la variable local 'lspconfig'
+      on_attach = on_attach,
+      capabilities = cmp_capabilities, -- Usar la variable local 'cmp_capabilities'
+      filetypes = { "sql", "mysql", "plsql" },
+    })
+
+    -- >>> NUEVA CONFIGURACIÓN PARA HTML, CSS, JS Y EMMET <<<
+
+    lspconfig.html.setup({ -- Usar la variable local 'lspconfig'
+      on_attach = on_attach,
+      capabilities = cmp_capabilities, -- Usar la variable local 'cmp_capabilities'
+    })
+
+    lspconfig.cssls.setup({ -- Usar la variable local 'lspconfig'
+      on_attach = on_attach,
+      capabilities = cmp_capabilities, -- Usar la variable local 'cmp_capabilities'
+    })
+
+    lspconfig.ts_ls.setup({ -- Usar la variable local 'lspconfig'
+      on_attach = on_attach,
+      capabilities = cmp_capabilities, -- Usar la variable local 'cmp_capabilities'
+    })
+
+    lspconfig.emmet_ls.setup({ -- Usar la variable local 'lspconfig'
+      on_attach = on_attach,
+      capabilities = cmp_capabilities, -- Usar la variable local 'cmp_capabilities'
+      filetypes = {
+        "html", "css", "scss", "less", "sass", "javascript", "javascriptreact",
+        "typescriptreact", "haml", "xml", "xsl", "pug", "slim", "svelte", "vue",
+      },
+      cmd = { 
+        "node", 
+        "/home/binario/.local/share/nvim/mason/packages/emmet-language-server/node_modules/.bin/emmet-language-server", 
+        "--stdio" 
+      }
+    })
+    -- >>> FIN DE LA NUEVA CONFIGURACIÓN <<<
+
+  end
 }

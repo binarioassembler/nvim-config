@@ -1,10 +1,10 @@
 -- ~/.config/nvim/ftplugin/cpp.lua
--- vim.notify("INTENTO DE CARGA: ftplugin/cpp.lua - Filetype buffer: " .. vim.bo.filetype, vim.log.levels.ERROR, {title = "DIAGNÓSTICO INICIAL"})
+-- Puedes mantener la guarda de filetype si lo deseas, o quitarla si solo quedan los mapeos.
+-- if vim.bo.filetype ~= 'cpp' then
+--   return
+-- end
 
-vim.bo.tabstop = 2
-vim.bo.softtabstop = 2
-vim.bo.shiftwidth = 2
-vim.bo.expandtab = true
+-- Las opciones de indentación ahora son globales y se establecen en lua/config/settings.lua.
 
 local function compile_and_run_cpp_toggleterm()
   vim.cmd('write')
@@ -13,8 +13,6 @@ local function compile_and_run_cpp_toggleterm()
   local executable_name_base = vim.fn.expand('%:t:r')
   local file_dir = vim.fn.expand('%:p:h')
   local executable_fullpath = file_dir .. "/" .. executable_name_base
-
-  -- vim.notify("FUNCIÓN CPP: compile_and_run_cpp_toggleterm LLAMADA. Filetype buffer: " .. vim.bo.filetype, vim.log.levels.ERROR, {title = "CPP DEBUG"})
   
   local compile_flags_cpp = "-std=c++17 -Wall -Wextra -pedantic"
   local command_to_run_cpp = string.format(
@@ -24,7 +22,6 @@ local function compile_and_run_cpp_toggleterm()
     vim.fn.shellescape(executable_fullpath),
     vim.fn.shellescape(executable_fullpath)
   )
-  -- vim.notify("FUNCIÓN CPP: Comando construido: " .. command_to_run_cpp, vim.log.levels.ERROR, {title = "CPP DEBUG"})
 
   local command_to_run = command_to_run_cpp
 
@@ -32,8 +29,7 @@ local function compile_and_run_cpp_toggleterm()
   if not toggleterm_module or not toggleterm_module.Terminal then
     local tt_setup_ok, toggleterm_setup = pcall(require, "toggleterm.terminal")
     if not tt_setup_ok or not toggleterm_setup or not toggleterm_setup.Terminal then
-        -- vim.notify("toggleterm.nvim o su módulo Terminal no está disponible.", vim.log.levels.ERROR, {title = "CPP DEBUG"})
-        vim.api.nvim_err_writeln("Error: toggleterm.nvim no está disponible para ftplugin/cpp.lua") -- Alternativa más visible si falla
+        vim.api.nvim_err_writeln("Error: toggleterm.nvim no está disponible para ftplugin/cpp.lua")
         return
     else
         toggleterm_module = toggleterm_setup
@@ -45,7 +41,7 @@ local function compile_and_run_cpp_toggleterm()
     dir = file_dir,
     direction = "float",
     hidden = true,
-    id = 1001,
+    id = 1001, -- Asegúrate de que este ID sea único
     on_open = function(opened_term)
       vim.api.nvim_buf_set_keymap(opened_term.bufnr, "n", "q", "<cmd>close<CR>", { noremap = true, silent = true })
       vim.api.nvim_buf_set_keymap(opened_term.bufnr, "t", "<Esc>", "<C-\\><C-n><cmd>close<CR>", { noremap = true, silent = true })
@@ -54,7 +50,6 @@ local function compile_and_run_cpp_toggleterm()
   })
   term:toggle()
 end
-
 vim.keymap.set('n', '<leader>rt', compile_and_run_cpp_toggleterm, { buffer = true, noremap = true, silent = true, desc = "Compile & Run C++ (ToggleTerm)" })
 
 local function compile_only_cpp_toggleterm()
@@ -63,8 +58,6 @@ local function compile_only_cpp_toggleterm()
   local executable_name_base = vim.fn.expand('%:t:r')
   local file_dir = vim.fn.expand('%:p:h')
   local executable_fullpath = file_dir .. "/" .. executable_name_base
-
-  -- vim.notify("FUNCIÓN CPP: compile_only_cpp_toggleterm LLAMADA. Filetype buffer: " .. vim.bo.filetype, vim.log.levels.ERROR, {title = "CPP DEBUG"})
 
   local compile_flags_cpp = "-std=c++17 -Wall -Wextra -pedantic"
   local command_to_run_cpp_only = string.format(
@@ -75,7 +68,6 @@ local function compile_only_cpp_toggleterm()
     vim.fn.basename(current_file_fullpath),
     vim.fn.basename(current_file_fullpath)
   )
-  -- vim.notify("FUNCIÓN CPP: Comando (solo compilar) construido: " .. command_to_run_cpp_only, vim.log.levels.ERROR, {title = "CPP DEBUG"})
   
   local command_to_run = command_to_run_cpp_only
 
@@ -83,7 +75,6 @@ local function compile_only_cpp_toggleterm()
   if not toggleterm_module or not toggleterm_module.Terminal then
     local tt_setup_ok, toggleterm_setup = pcall(require, "toggleterm.terminal")
     if not tt_setup_ok or not toggleterm_setup or not toggleterm_setup.Terminal then
-        -- vim.notify("toggleterm.nvim o su módulo Terminal no está disponible.", vim.log.levels.ERROR, {title = "CPP DEBUG"})
         vim.api.nvim_err_writeln("Error: toggleterm.nvim no está disponible para ftplugin/cpp.lua")
         return
     else
@@ -95,7 +86,7 @@ local function compile_only_cpp_toggleterm()
     dir = file_dir,
     direction = "float",
     hidden = true,
-    id = 1003,
+    id = 1003, -- Asegúrate de que este ID sea único
     on_open = function(opened_term)
       vim.api.nvim_buf_set_keymap(opened_term.bufnr, "n", "q", "<cmd>close<CR>", { noremap = true, silent = true })
       vim.api.nvim_buf_set_keymap(opened_term.bufnr, "t", "<Esc>", "<C-\\><C-n><cmd>close<CR>", { noremap = true, silent = true })
@@ -105,5 +96,3 @@ local function compile_only_cpp_toggleterm()
   term:toggle()
 end
 vim.keymap.set('n', '<leader>rC', compile_only_cpp_toggleterm, { buffer = true, noremap = true, silent = true, desc = "Compile Only C++ (ToggleTerm)" })
-
--- vim.notify("FIN DE CARGA: ftplugin/cpp.lua", vim.log.levels.ERROR, {title = "DIAGNÓSTICO FINAL"})

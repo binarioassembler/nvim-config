@@ -2,46 +2,47 @@
 return {
   {
     "akinsho/toggleterm.nvim",
-    version = "*", -- o una versión específica si prefieres
+    version = "*",
     opts = {
       size = function(term)
         if term.direction == "horizontal" then
-          return 15 -- Altura para splits horizontales
+          return 15
         elseif term.direction == "vertical" then
-          return vim.o.columns * 0.4 -- Ancho para splits verticales
+          return math.floor(vim.o.columns * 0.4)
         end
-        return 20 -- Tamaño para terminales flotantes (altura si es flotante por defecto)
+        return math.floor(vim.o.lines * 0.6)
       end,
-      open_mapping = [[<c-t>]], -- Atajo para abrir un terminal genérico (Ctrl + t)
-      hide_numbers = true,       -- Ocultar números de línea en el terminal
-      shade_filetypes = {},
+      open_mapping = [[<c-t>]],
+      hide_numbers = true,
       shade_terminals = true,
-      shading_factor = 1, -- Un poco menos de sombreado que el valor por defecto
+      shading_factor = '75', -- Un valor más alto oscurece más los terminales inactivos
       start_in_insert = true,
-      insert_mappings = true, -- Permite usar mapeos de inserción en el terminal
+      insert_mappings = true,
       persist_size = true,
-      direction = 'float', -- Por defecto, los terminales se abrirán como flotantes
-      close_on_exit = true, -- Cerrar la ventana del terminal cuando el proceso termine
-      shell = vim.o.shell, -- Usar el shell configurado en Neovim
+      direction = 'float',
+      close_on_exit = true,
+      shell = vim.o.shell,
+      winbar = {
+        enabled = false,
+      },
       float_opts = {
-        border = 'curved', -- Tipo de borde para terminales flotantes
-        winblend = 0,
+        border = 'curved', -- O 'rounded', 'curved', 'single', etc.
+        title = "Salida del Comando",
+        title_pos = "center",
+        width = function()
+          return math.floor(vim.o.columns * 0.75)
+        end,
+        -- Referenciar los grupos de resaltado definidos en colorscheme.lua
         highlights = {
-          border = "Normal",
-          background = "Normal",
+          border = "ToggleTermBorder",
+          background = "ToggleTermFloatBg", -- Este será el fondo de la VENTANA flotante
+          title = "ToggleTermTitle",
         },
       },
-      -- Mapeos de ventana para cerrar el terminal flotante
-      -- Puedes usar 'q' en modo normal o <Esc> en modo terminal para cerrar
-      winbar = {
-        enabled = false, -- Deshabilitar la winbar para toggleterm si no la usas
-      },
     },
-    -- Configuración opcional, puedes añadir mapeos de teclas aquí si lo prefieres globalmente
-    -- config = function(_, opts)
-    --   require('toggleterm').setup(opts)
-    --   -- Ejemplo de mapeo global para un terminal flotante
-    --   -- vim.keymap.set('n', '<leader>tf', "<cmd>ToggleTerm direction=float<cr>", { desc = "Terminal flotante" })
-    -- end,
+    -- No es necesario un 'config' aquí si solo estamos usando 'opts'
+    -- y los resaltados se definen externamente.
+    -- Si la integración de Catppuccin para toggleterm (en colorscheme.lua) funciona,
+    -- incluso podrías eliminar la sección 'highlights' de aquí y dejar que Catppuccin lo maneje.
   },
 }

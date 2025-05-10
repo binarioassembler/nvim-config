@@ -17,6 +17,9 @@ return {
       "markdown",
       "markdown_inline",
       "sql",
+      "html",
+      "css",
+      "javascript",
     },
     highlight = {
       enable = true,
