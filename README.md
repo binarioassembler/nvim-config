@@ -22,6 +22,7 @@ Esta es la configuración base de mi terminal en NeoVim, ¡en constante evoluci�
         *   📄 `cmp.lua`
         *   📄 `colorscheme.lua`
         *   📄 `dadbod.lua`
+        *   📄 `dap.lua`
         *   📄 `fugitive.lua`
         *   📄 `gitsigns.lua`
         *   📄 `lsp.lua`
@@ -87,6 +88,7 @@ Configuraciones específicas por tipo de archivo (`filetype plugin`).
 Ajustes para archivos C.
 
 ```lua
+-- ~/.config/nvim/ftplugin/c.lua
 -- ~/.config/nvim/ftplugin/c.lua
 if vim.bo.filetype ~= 'c' then
   return
@@ -190,48 +192,50 @@ vim.keymap.set('n', '<leader>rC', compile_only_c_toggleterm, { buffer = true, no
 Ajustes para archivos C++.
 
 ```lua
--- ~/.config/nvim/ftplugin/c.lua
-if vim.bo.filetype ~= 'c' then
-  return
-end
+-- ~/.config/nvim/ftplugin/cpp.lua
+-- Puedes mantener la guarda de filetype si lo deseas, o quitarla si solo quedan los mapeos.
+-- if vim.bo.filetype ~= 'cpp' then
+--   return
+-- end
 
 -- Las opciones de indentación ahora son globales y se establecen en lua/config/settings.lua.
--- Solo mantenemos aquí lo específico para C que NO sea indentación, como las funciones de compilación.
 
-local function compile_and_run_c_toggleterm()
+local function compile_and_run_cpp_toggleterm()
   vim.cmd('write')
+
   local current_file_fullpath = vim.fn.expand('%:p')
   local executable_name_base = vim.fn.expand('%:t:r')
   local file_dir = vim.fn.expand('%:p:h')
   local executable_fullpath = file_dir .. "/" .. executable_name_base
-
-  local compile_flags_c = "-std=c11 -Wall -Wextra -pedantic"
-  local command_to_run_c = string.format(
-    "if gcc %s %s -o %s; then clear; %s; echo ''; echo '--- Ejecución finalizada. ---'; else echo ''; echo '--- COMPILACIÓN FALLIDA ---'; fi; echo ''; echo 'Presiona tecla Enter.'; read -n 1 -s -r",
-    compile_flags_c,
+  
+  local compile_flags_cpp = "-std=c++17 -Wall -Wextra -pedantic"
+  local command_to_run_cpp = string.format(
+    "if g++ %s %s -o %s; then clear; %s; echo ''; echo '--- Ejecución finalizada. ---'; else echo ''; echo '--- COMPILACIÓN FALLIDA ---'; fi; echo ''; echo 'Presiona Enter.'; read -n 1 -s -r",
+    compile_flags_cpp,
     vim.fn.shellescape(current_file_fullpath),
     vim.fn.shellescape(executable_fullpath),
     vim.fn.shellescape(executable_fullpath)
   )
 
-  local command_to_run = command_to_run_c
+  local command_to_run = command_to_run_cpp
 
   local toggleterm_module = require("toggleterm")
   if not toggleterm_module or not toggleterm_module.Terminal then
     local tt_setup_ok, toggleterm_setup = pcall(require, "toggleterm.terminal")
     if not tt_setup_ok or not toggleterm_setup or not toggleterm_setup.Terminal then
-        vim.api.nvim_err_writeln("Error: toggleterm.nvim no está disponible para ftplugin/c.lua")
+        vim.api.nvim_err_writeln("Error: toggleterm.nvim no está disponible para ftplugin/cpp.lua")
         return
     else
         toggleterm_module = toggleterm_setup
     end
   end
+
   local term = toggleterm_module.Terminal:new({
     cmd = command_to_run,
     dir = file_dir,
     direction = "float",
     hidden = true,
-    id = 1002, -- Asegúrate de que este ID sea único si tienes otros terminales definidos así
+    id = 1001, -- Asegúrate de que este ID sea único
     on_open = function(opened_term)
       vim.api.nvim_buf_set_keymap(opened_term.bufnr, "n", "q", "<cmd>close<CR>", { noremap = true, silent = true })
       vim.api.nvim_buf_set_keymap(opened_term.bufnr, "t", "<Esc>", "<C-\\><C-n><cmd>close<CR>", { noremap = true, silent = true })
@@ -240,32 +244,32 @@ local function compile_and_run_c_toggleterm()
   })
   term:toggle()
 end
-vim.keymap.set('n', '<leader>rt', compile_and_run_c_toggleterm, { buffer = true, noremap = true, silent = true, desc = "Compile & Run C (ToggleTerm)" })
+vim.keymap.set('n', '<leader>rt', compile_and_run_cpp_toggleterm, { buffer = true, noremap = true, silent = true, desc = "Compile & Run C++ (ToggleTerm)" })
 
-local function compile_only_c_toggleterm()
+local function compile_only_cpp_toggleterm()
   vim.cmd('write')
   local current_file_fullpath = vim.fn.expand('%:p')
   local executable_name_base = vim.fn.expand('%:t:r')
   local file_dir = vim.fn.expand('%:p:h')
   local executable_fullpath = file_dir .. "/" .. executable_name_base
-  
-  local compile_flags_c = "-std=c11 -Wall -Wextra -pedantic"
-  local command_to_run_c_only = string.format(
-    "if gcc %s %s -o %s; then echo 'Compilación de %s exitosa!'; else echo 'Error: compilación de %s fallida.'; fi; echo ''; echo 'Presiona cualquier tecla para cerrar esta ventana.'; read -n 1 -s -r",
-    compile_flags_c,
+
+  local compile_flags_cpp = "-std=c++17 -Wall -Wextra -pedantic"
+  local command_to_run_cpp_only = string.format(
+    "if g++ %s %s -o %s; then echo 'Compilación de %s exitosa!'; else echo 'Error: compilación de %s fallida.'; fi; echo ''; echo 'Presiona cualquier tecla para cerrar esta ventana.'; read -n 1 -s -r",
+    compile_flags_cpp,
     vim.fn.shellescape(current_file_fullpath),
     vim.fn.shellescape(executable_fullpath),
     vim.fn.basename(current_file_fullpath),
     vim.fn.basename(current_file_fullpath)
   )
   
-  local command_to_run = command_to_run_c_only
+  local command_to_run = command_to_run_cpp_only
 
   local toggleterm_module = require("toggleterm")
   if not toggleterm_module or not toggleterm_module.Terminal then
     local tt_setup_ok, toggleterm_setup = pcall(require, "toggleterm.terminal")
     if not tt_setup_ok or not toggleterm_setup or not toggleterm_setup.Terminal then
-        vim.api.nvim_err_writeln("Error: toggleterm.nvim no está disponible para ftplugin/c.lua")
+        vim.api.nvim_err_writeln("Error: toggleterm.nvim no está disponible para ftplugin/cpp.lua")
         return
     else
         toggleterm_module = toggleterm_setup
@@ -276,7 +280,7 @@ local function compile_only_c_toggleterm()
     dir = file_dir,
     direction = "float",
     hidden = true,
-    id = 1004, -- Asegúrate de que este ID sea único
+    id = 1003, -- Asegúrate de que este ID sea único
     on_open = function(opened_term)
       vim.api.nvim_buf_set_keymap(opened_term.bufnr, "n", "q", "<cmd>close<CR>", { noremap = true, silent = true })
       vim.api.nvim_buf_set_keymap(opened_term.bufnr, "t", "<Esc>", "<C-\\><C-n><cmd>close<CR>", { noremap = true, silent = true })
@@ -285,7 +289,7 @@ local function compile_only_c_toggleterm()
   })
   term:toggle()
 end
-vim.keymap.set('n', '<leader>rC', compile_only_c_toggleterm, { buffer = true, noremap = true, silent = true, desc = "Compile Only C (ToggleTerm)" })
+vim.keymap.set('n', '<leader>rC', compile_only_cpp_toggleterm, { buffer = true, noremap = true, silent = true, desc = "Compile Only C++ (ToggleTerm)" })
 ```
 
 ---
@@ -315,7 +319,7 @@ Definición de atajos de teclado globales y específicos.
 ```lua
 -- lua/config/keymaps.lua
 
--- === TUS MAPEOS GLOBALES EXISTENTES (NO SE TOCAN) ===
+-- === TUS MAPEOS GLOBALES EXISTENTES ===
 vim.keymap.set('n', '<leader>bd', ':bd!<cr>', {desc = "Close current buffer" })
 vim.keymap.set('', '<leader>rr', ':source %<cr>', { desc = "Source the current file" })
 vim.keymap.set('v', '>', '>gv', { desc = "after tab in re-select the same"})
@@ -323,95 +327,140 @@ vim.keymap.set('v', '<', '<gv', { desc = "after tab out re-select the same"})
 vim.keymap.set('n', 'n', 'nzzzv', { desc = "Goes to the next result on the seach and put the cursor in the middle"})
 vim.keymap.set('n', 'N', 'Nzzzv', { desc = "Goes to the prev result on the seach and put the cursor in the middle"})
 
--- >>> INICIO: MAPEO SIMPLIFICADO PARA LIVE SERVER <<<
+-- >>> MAPEO SIMPLIFICADO PARA LIVE SERVER (HTML/Markdown) <<<
 vim.keymap.set('n', '<leader>op', function()
   local current_ft = vim.bo.filetype
   if current_ft ~= 'html' and current_ft ~= 'htmldjango' and current_ft ~= 'markdown' then
     vim.notify("Comando <leader>op principalmente para archivos HTML/Markdown.", vim.log.levels.WARN, { title = "Live Server" })
     return 
   end
-
-  local file_path = vim.fn.expand('%:p')
-  if file_path == '' then
-    vim.notify("No hay un archivo abierto para servir.", vim.log.levels.WARN, { title = "Live Server" })
-    return
+  local file_path = vim.fn.expand('%:p'); if file_path == '' then vim.notify("No hay un archivo abierto para servir.", vim.log.levels.WARN, { title = "Live Server" }); return end
+  local file_dir = vim.fn.expand('%:p:h'); local file_name_to_serve = vim.fn.expand('%:t')
+  
+  local tt_status, toggleterm_module = pcall(require, "toggleterm") 
+  if not tt_status or not toggleterm_module then
+    vim.api.nvim_err_writeln("Error: toggleterm.nvim (módulo principal) no está disponible."); return
   end
-  local file_dir = vim.fn.expand('%:p:h') 
-  local file_name_to_serve = vim.fn.expand('%:t')
-
-  local tt_status, toggleterm = pcall(require, "toggleterm.terminal")
-  if not tt_status or not toggleterm or not toggleterm.Terminal then
-    vim.api.nvim_err_writeln("Error: toggleterm.nvim no está disponible para el mapeo de live-server.")
-    vim.notify("toggleterm.nvim no está disponible.", vim.log.levels.ERROR, { title = "Live Server" })
-    return
+  local Terminal_constructor = require("toggleterm.terminal").Terminal 
+  if not Terminal_constructor then
+    vim.api.nvim_err_writeln("Error: toggleterm.terminal.Terminal no está disponible."); return
   end
 
-  local Terminal = toggleterm.Terminal
-  local FIXED_LIVE_SERVER_ID = 2000 -- Un ID numérico fijo para nuestro live-server
-
-  -- Intentar encontrar un terminal existente con el ID fijo
+  local FIXED_LIVE_SERVER_ID = 2000 
   local existing_term
-  local all_terms_status, all_terms = pcall(toggleterm.get_all)
-  if all_terms_status and type(all_terms) == "table" then
-    for _, t in ipairs(all_terms) do
-      if t.id == FIXED_LIVE_SERVER_ID then -- Comparar directamente el ID numérico
-        existing_term = t
-        break
-      end
-    end
+  if toggleterm_module.get_term then 
+      existing_term = toggleterm_module.get_term(function(term) return term.id == FIXED_LIVE_SERVER_ID end)
   end
 
   if existing_term then
-    if existing_term:is_running() then
-      vim.notify("Live-server ya está corriendo (ID: " .. FIXED_LIVE_SERVER_ID .. "). Mostrando terminal.", vim.log.levels.INFO, { title = "Live Server" })
-      existing_term:open() -- Asegura que esté visible
-      -- Podrías querer que esto también intente refrescar el navegador,
-      -- pero live-server debería hacerlo al guardar archivos.
-    else
-      -- El terminal existe pero el proceso no está corriendo (ej. Ctrl+C en él).
-      -- Podríamos reabrirlo con el mismo comando.
-      vim.notify("Reiniciando Live-server en terminal existente (ID: " .. FIXED_LIVE_SERVER_ID .. ").", vim.log.levels.INFO, { title = "Live Server" })
-      existing_term.cmd = "live-server --open=./" .. vim.fn.shellescape(file_name_to_serve) -- Actualizar comando por si el archivo cambió
-      existing_term.dir = file_dir -- Actualizar directorio por si cambió
-      existing_term:open() -- Reabre y ejecuta el nuevo cmd
-      -- Ocultar después de un retraso
-      vim.defer_fn(function()
-        if existing_term and existing_term:is_open() then existing_term:close() end
-      end, 3000)
-    end
+    if existing_term:is_running() then vim.notify("Live-server ya corriendo (ID: " .. FIXED_LIVE_SERVER_ID .. "). Mostrando.", vim.log.levels.INFO, { title = "Live Server" }); existing_term:open()
+    else vim.notify("Reiniciando Live-server (ID: " .. FIXED_LIVE_SERVER_ID .. ").", vim.log.levels.INFO, { title = "Live Server" }); existing_term:set_cmd("live-server --open=./" .. vim.fn.shellescape(file_name_to_serve)); existing_term:set_dir(file_dir); existing_term:open(); vim.defer_fn(function() if existing_term and existing_term:is_open() then existing_term:close() end end, 3000) end
     return 
   end
+  vim.notify("Iniciando nuevo Live-server (ID: " .. FIXED_LIVE_SERVER_ID .. ") para: " .. file_name_to_serve, vim.log.levels.INFO, { title = "Live Server" }); local cmd_to_run = "live-server --open=./" .. vim.fn.shellescape(file_name_to_serve)
+  local term_instance = Terminal_constructor:new({ cmd = cmd_to_run, dir = file_dir, direction = "float", hidden = false, close_on_exit = true, id = FIXED_LIVE_SERVER_ID, display_name = "Live Server (" .. FIXED_LIVE_SERVER_ID .. ")", on_open = function(opened_terminal) vim.api.nvim_buf_set_keymap(opened_terminal.bufnr, "t", "<esc>", "<c-\\><c-n>", {noremap = true, silent = true}); vim.api.nvim_buf_set_keymap(opened_terminal.bufnr, "t", "<C-q>", "<c-\\><c-n><cmd>close<CR>", {noremap = true, silent = true}); vim.notify("Live-server iniciado. Terminal se ocultará.", vim.log.levels.INFO, { title = "Live Server" }); vim.defer_fn(function() if opened_terminal and opened_terminal:is_open() then opened_terminal:close() end end, 3000) end, on_close = function() vim.notify("Proceso Live-server (ID: ".. FIXED_LIVE_SERVER_ID ..") detenido.", vim.log.levels.INFO, { title = "Live Server" }) end })
+  term_instance:open()
+end, { desc = "Open/Toggle Live Server (HTML/MD)" })
 
-  -- Si no existe, crear uno nuevo
-  vim.notify("Iniciando nuevo Live-server (ID: " .. FIXED_LIVE_SERVER_ID .. ") para: " .. file_name_to_serve, vim.log.levels.INFO, { title = "Live Server" })
-  local cmd_to_run = "live-server --open=./" .. vim.fn.shellescape(file_name_to_serve)
 
-  local term_instance = Terminal:new({
-    cmd = cmd_to_run,
-    dir = file_dir,
-    direction = "float", 
-    hidden = false, 
+-- >>> INICIO: NUEVO MAPEO PARA SERVIDOR PHP CON TOGGLETERM <<<
+local function start_php_server_and_open_browser()
+  local current_file_name = vim.fn.expand('%:t') 
+  local project_root = vim.fn.getcwd()     
+
+  local file_to_serve_in_browser = current_file_name
+  if file_to_serve_in_browser == "" then
+    file_to_serve_in_browser = "index.php" 
+    vim.notify("Ningún archivo abierto. Intentando abrir " .. file_to_serve_in_browser .. " en el navegador.", vim.log.levels.INFO, { title = "PHP Server" })
+  elseif vim.bo.filetype ~= 'php' and not string.find(file_to_serve_in_browser, "%.php$") then
+     vim.notify("El archivo actual no es PHP. Iniciando servidor PHP. Abriendo: " .. file_to_serve_in_browser, vim.log.levels.WARN, { title = "PHP Server" })
+  end
+
+  local port = "8000"
+  local server_url = "http://localhost:" .. port .. "/" .. vim.fn.fnameescape(file_to_serve_in_browser)
+  local php_server_cmd = "php -S localhost:" .. port
+
+  local open_browser_cmd_string 
+  if vim.fn.has("mac") == 1 or vim.fn.has("macunix") == 1 then
+    open_browser_cmd_string = "open " .. vim.fn.shellescape(server_url)
+  elseif vim.fn.has("unix") == 1 and vim.fn.executable("xdg-open") == 1 then
+    open_browser_cmd_string = "xdg-open " .. vim.fn.shellescape(server_url)
+  elseif vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1 then
+    open_browser_cmd_string = "explorer.exe " .. vim.fn.shellescape(server_url) -- En Windows, no se necesita shellescape para la URL con explorer.exe
+                                             -- open_browser_cmd_string = "start " .. server_url -- Alternativa para Windows
+  else
+    vim.notify("No se pudo determinar el comando para abrir el navegador.", vim.log.levels.ERROR, { title = "PHP Server" })
+  end
+
+  local tt_status, toggleterm_module = pcall(require, "toggleterm")
+  if not tt_status or not toggleterm_module then
+    vim.api.nvim_err_writeln("Error: toggleterm.nvim (módulo principal) no está disponible para el servidor PHP.")
+    return
+  end
+  local Terminal_constructor = require("toggleterm.terminal").Terminal
+  if not Terminal_constructor then
+    vim.api.nvim_err_writeln("Error: toggleterm.terminal.Terminal (constructor) no está disponible.")
+    return
+  end
+
+  local PHP_SERVER_TERM_NAME = "PHP_DEV_SERVER" 
+
+  local existing_php_term
+  if toggleterm_module.get_term then
+    existing_php_term = toggleterm_module.get_term(function(term)
+      return term.display_name == PHP_SERVER_TERM_NAME
+    end)
+  end
+  
+  if existing_php_term then
+    if existing_php_term:is_running() then
+      vim.notify("Servidor PHP ya está corriendo.", vim.log.levels.INFO, { title = "PHP Server" })
+      if open_browser_cmd_string then
+          vim.notify("Intentando abrir/refrescar: " .. server_url, vim.log.levels.INFO, { title = "PHP Server" })
+          vim.fn.system(open_browser_cmd_string .. " > /dev/null 2>&1 &")
+      end
+      existing_php_term:open()
+    else
+      vim.notify("Terminal de servidor PHP encontrada pero no corriendo. Reiniciando...", vim.log.levels.INFO, { title = "PHP Server" })
+      existing_php_term:set_cmd(php_server_cmd)
+      existing_php_term:set_dir(project_root)
+      existing_php_term:open()
+      if open_browser_cmd_string then
+        vim.defer_fn(function()
+            vim.notify("Abriendo navegador (reinicio): " .. server_url, vim.log.levels.INFO, { title = "PHP Server" })
+            vim.fn.system(open_browser_cmd_string .. " > /dev/null 2>&1 &")
+        end, 1500)
+      end
+    end
+    return
+  end
+
+  vim.notify("Iniciando nuevo Servidor PHP en " .. project_root, vim.log.levels.INFO, { title = "PHP Server" })
+  local term_instance = Terminal_constructor:new({
+    cmd = php_server_cmd, 
+    dir = project_root,
+    direction = "float",
+    hidden = false,
     close_on_exit = true,
-    id = FIXED_LIVE_SERVER_ID, -- Usar el ID numérico fijo
-    display_name = "Live Server (" .. FIXED_LIVE_SERVER_ID .. ")",
-    on_open = function(opened_terminal)
-      vim.api.nvim_buf_set_keymap(opened_terminal.bufnr, "t", "<esc>", "<c-\\><c-n>", {noremap = true, silent = true})
-      vim.api.nvim_buf_set_keymap(opened_terminal.bufnr, "t", "<C-q>", "<c-\\><c-n><cmd>close<CR>", {noremap = true, silent = true})
-      vim.notify("Live-server iniciado (ID: " .. FIXED_LIVE_SERVER_ID .. "). Terminal se ocultará.", vim.log.levels.INFO, { title = "Live Server" })
-      
-      vim.defer_fn(function()
-        if opened_terminal and opened_terminal:is_open() then
-          opened_terminal:close() 
-        end
-      end, 3000)
+    display_name = PHP_SERVER_TERM_NAME,
+    on_open = function(term)
+      vim.notify("Servidor PHP iniciado. Logs visibles aquí.", vim.log.levels.INFO, { title = "PHP Server" })
+      if open_browser_cmd_string then
+        vim.defer_fn(function()
+            vim.notify("Abriendo navegador: " .. server_url, vim.log.levels.INFO, { title = "PHP Server" })
+            vim.fn.system(open_browser_cmd_string .. " > /dev/null 2>&1 &") 
+        end, 1500) 
+      end
     end,
-    on_close = function() 
-      vim.notify("Proceso de Live-server (ID: ".. FIXED_LIVE_SERVER_ID ..") detenido.", vim.log.levels.INFO, { title = "Live Server" })
+    on_close = function()
+      vim.notify("Servidor PHP detenido.", vim.log.levels.INFO, { title = "PHP Server" })
     end
   })
   term_instance:open()
+end
 
-end, { desc = "Open/Toggle Live Server (ToggleTerm)" })
+vim.keymap.set('n', '<leader>osp', start_php_server_and_open_browser, { desc = "Open PHP Server & Browser (ToggleTerm)" })
+-- >>> FIN: NUEVO MAPEO PARA SERVIDOR PHP <<<
 ```
 
 ##### 📄 `lua/config/lazy.lua`
@@ -848,6 +897,115 @@ return {
 }
 ```
 
+##### 📄 `lua/plugins/dap.lua`
+
+Plugin: `vim-dap` (mapeos para DAP).
+
+```lua
+-- lua/plugins/dap.lua
+return {
+  {
+    "mfussenegger/nvim-dap",
+    dependencies = {
+      {
+        "rcarriga/nvim-dap-ui",
+        dependencies = { "nvim-neotest/nvim-nio" },
+        config = function()
+          local dapui = require("dapui")
+          dapui.setup({
+            expand_lines = true,
+            icons = { expanded = "▾", collapsed = "▸", current_frame = "▸" },
+            mappings = { expand = { "<CR>", "<2-LeftMouse>" }, open = "o", remove = "d", edit = "e", repl = "r", toggle = "t" },
+            layouts = {
+              { elements = { { id = "scopes", size = 0.35 }, { id = "breakpoints", size = 0.20 }, { id = "stacks", size = 0.25 }, { id = "watches", size = 0.20 }, }, size = 40, position = "left" },
+              { elements = { { id = "repl", size = 0.5 }, { id = "console", size = 0.5 }, }, size = 0.25, position = "bottom" },
+            },
+            floating = { max_height = nil, max_width = nil, border = "rounded", mappings = { close = { "q", "<Esc>" } } },
+            windows = { indent = 1 },
+            render = { max_type_length = nil, max_value_lines = 100 }
+          })
+          local dap_listeners = require("dap") 
+          dap_listeners.listeners.after.event_initialized["dapui_config"] = function() dapui.open({}) end
+          dap_listeners.listeners.before.event_terminated["dapui_config"] = function() dapui.close({}) end
+        end,
+      },
+      {
+        "theHamsta/nvim-dap-virtual-text",
+        opts = { commented = false },
+      },
+    },
+    config = function()
+      local dap = require("dap") 
+
+      dap.adapters.php = {
+        type = "executable",
+        command = "node",
+        args = { vim.fn.stdpath("data") .. "/mason/packages/php-debug-adapter/extension/out/phpDebug.js" },
+      }
+
+      dap.configurations.php = {
+        {
+          type = "php",
+          request = "launch",
+          name = "Listen for Xdebug",
+          port = 9003,
+          stopOnEntry = false,
+        },
+      }
+
+      -- >>> INICIO: MAPEOS PARA NVIM-DAP (MOVIDOS AQUÍ) <<<
+      local dapui_ok, dapui = pcall(require, "dapui")
+
+      vim.keymap.set('n', '<leader>dc', function() dap.continue() end, { desc = "DAP: Continue (<F5>)" })
+      vim.keymap.set('n', '<leader>do', function() dap.step_over() end, { desc = "DAP: Step Over (<F10>)" })
+      vim.keymap.set('n', '<leader>di', function() dap.step_into() end, { desc = "DAP: Step Into (<F11>)" })
+      vim.keymap.set('n', '<leader>du', function() dap.step_out() end, { desc = "DAP: Step Out (Shift+<F11>)" })
+      vim.keymap.set('n', '<leader>db', function() dap.toggle_breakpoint() end, { desc = "DAP: Toggle Breakpoint" })
+      vim.keymap.set('n', '<leader>dB', function() dap.set_breakpoint(vim.fn.input('Breakpoint condition: ')) end, { desc = "DAP: Set Conditional Breakpoint" })
+      vim.keymap.set('n', '<leader>dlp', function() dap.set_breakpoint(nil, nil, vim.fn.input('Log point message: ')) end, { desc = "DAP: Set Log Point" })
+      vim.keymap.set('n', '<leader>dr', function() dap.repl.open() end, { desc = "DAP: Open REPL" })
+      vim.keymap.set('n', '<leader>dj', function() dap.run_last() end, { desc = "DAP: Run Last Config (Jump to)" })
+      vim.keymap.set('n', '<leader>dt', function() dap.terminate() end, { desc = "DAP: Terminate Session" })
+
+      if dapui_ok then
+        vim.keymap.set('n', '<leader>duu', function() dapui.toggle({}) end, { desc = "DAP: Toggle UI" })
+        vim.keymap.set('n', '<leader>due', function() dapui.eval(vim.fn.input("Eval: ")) end, { desc = "DAP: Evaluate Expression (Input)"})
+        vim.keymap.set('v', '<leader>due', function() dapui.eval() end, { desc = "DAP: Evaluate Visual Selection" })
+        vim.keymap.set('n', '<leader>dus', function() dapui.open({reset=true}) end, { desc = "DAP: Open UI (Scopes)"})
+      else
+        vim.keymap.set({'n', 'v'}, '<leader>due', function() require('dap.ui.widgets').hover() end, { desc = "DAP: Hover/Evaluate (Fallback)" })
+      end
+
+      vim.keymap.set('n', '<leader>dsc', function()
+        local configs = {}
+        for _, config_type_table in pairs(dap.configurations) do
+          if type(config_type_table) == "table" then
+            for _, config_entry in ipairs(config_type_table) do
+              table.insert(configs, config_entry.name .. " (type: " .. config_entry.type .. ")")
+            end
+          end
+        end
+        if #configs == 0 then vim.notify("DAP: No configurations found.", vim.log.levels.WARN); return end
+        vim.ui.select(configs, { prompt = "Select DAP configuration:" }, function(choice)
+          if not choice then return end
+          local selected_name = string.match(choice, "^(.-)%s*%(")
+          for _, config_type_table in pairs(dap.configurations) do
+            if type(config_type_table) == "table" then
+              for _, config_entry in ipairs(config_type_table) do
+                if config_entry.name == selected_name then dap.run(config_entry); return end
+              end
+            end
+          end
+        end)
+      end, { desc = "DAP: Select Configuration and Run" })
+      -- >>> FIN: MAPEOS PARA NVIM-DAP <<<
+      
+      vim.notify("nvim-dap configurado y mapeos aplicados.", vim.log.levels.INFO, {title = "DAP Setup"})
+    end,
+  },
+}
+```
+
 ##### 📄 `lua/plugins/fugitive.lua`
 
 Plugin: `vim-fugitive` (integración con Git).
@@ -883,7 +1041,7 @@ return {
 Plugin: `nvim-lspconfig` (configuración para Language Server Protocol).
 
 ```lua
--- lua/plugins/lsp.lua
+-- lua/plugins/lsp.lua (Permitiendo que Intelephense formatee)
 return {
   "neovim/nvim-lspconfig",
   dependencies = {
@@ -891,97 +1049,30 @@ return {
     "folke/neodev.nvim",
   },
   config = function()
-    -- === MAPEOS GLOBALES DE LSP ===
-    vim.keymap.set('n', '<space>e', vim.diagnostic.open_float)
-    vim.keymap.set('n', '[d', vim.diagnostic.goto_prev)
-    vim.keymap.set('n', ']d', vim.diagnostic.goto_next)
-    vim.keymap.set('n', '<space>q', vim.diagnostic.setloclist)
+    vim.keymap.set('n', '<space>e', vim.diagnostic.open_float, { desc = "LSP: Show line diagnostics" })
+    vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = "LSP: Go to previous diagnostic" })
+    vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = "LSP: Go to next diagnostic" })
+    vim.keymap.set('n', '<space>q', vim.diagnostic.setloclist, { desc = "LSP: Open diagnostics list" })
 
-    -- === FUNCIÓN ON_ATTACH ===
-    local on_attach = function(_, bufnr)
+    local on_attach = function(client, bufnr)
       vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
-      local opts = { buffer = bufnr }
-      vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
-      vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-      vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
-      vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
-      vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
-      vim.keymap.set('n', '<space>wa', vim.lsp.buf.add_workspace_folder, opts)
-      vim.keymap.set('n', '<space>wr', vim.lsp.buf.remove_workspace_folder, opts)
-      vim.keymap.set('n', '<space>wl', function()
-        print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
-      end, opts)
-      vim.keymap.set('n', '<space>D', vim.lsp.buf.type_definition, opts)
-      vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, opts)
-      vim.keymap.set({ 'n', 'v' }, '<space>ca', vim.lsp.buf.code_action, opts)
-      vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
-      vim.keymap.set('n', '<space>f', function()
-        vim.lsp.buf.format { async = true }
-      end, { buffer= bufnr, desc = "Format code (LSP)"})
+      local base_opts = { buffer = bufnr, noremap = true, silent = true }
+      local function map(mode, lhs, rhs, desc) vim.keymap.set(mode, lhs, rhs, vim.tbl_extend('force', base_opts, { desc = "LSP: " .. desc })) end
+      map('n', 'gD', vim.lsp.buf.declaration, "Go to Declaration"); map('n', 'gd', vim.lsp.buf.definition, "Go to Definition"); map('n', 'K', vim.lsp.buf.hover, "Hover Documentation"); map('n', 'gi', vim.lsp.buf.implementation, "Go to Implementation"); map('n', '<C-k>', vim.lsp.buf.signature_help, "Signature Help"); map('n', '<space>wa', vim.lsp.buf.add_workspace_folder, "Add Workspace Folder"); map('n', '<space>wr', vim.lsp.buf.remove_workspace_folder, "Remove Workspace Folder"); map('n', '<space>wl', function() print(vim.inspect(vim.lsp.buf.list_workspace_folders())) end, "List Workspace Folders"); map('n', '<space>D', vim.lsp.buf.type_definition, "Go to Type Definition"); map('n', '<space>rn', vim.lsp.buf.rename, "Rename Symbol"); map({ 'n', 'v' }, '<space>ca', vim.lsp.buf.code_action, "Code Action"); map('n', 'gr', vim.lsp.buf.references, "Go to References"); map('n', '<space>f', function() vim.lsp.buf.format { async = true } end, "Format Code")
+
+      -- El siguiente bloque ESTÁ COMENTADO para permitir que Intelephense formatee.
+      -- if client.name == "intelephense" then
+      --   -- vim.notify("LSP: Intelephense adjunto. Desactivando su formateador.", vim.log.levels.INFO, {title = "LSP Setup"})
+      --   client.server_capabilities.documentFormattingProvider = false
+      --   client.server_capabilities.documentRangeFormattingProvider = false
+      -- end
     end
 
-    -- === REQUIRES Y VARIABLES LOCALES PARA LSP ===
-    local lspconfig = require("lspconfig") -- Definir UNA VEZ aquí
-    local cmp_capabilities = require('cmp_nvim_lsp').default_capabilities() -- Definir UNA VEZ aquí
-
-    -- === CONFIGURACIONES LSP EXISTENTES ===
+    local lspconfig = require("lspconfig"); local cmp_capabilities = require('cmp_nvim_lsp').default_capabilities()
     require("neodev").setup()
-    lspconfig.lua_ls.setup({ -- Usar la variable local 'lspconfig'
-      on_attach = on_attach,
-      capabilities = cmp_capabilities, -- Usar la variable local 'cmp_capabilities'
-      settings = {
-        Lua = {
-          telemetry = { enable = false },
-          workspace = { checkThirdParty = false },
-        }
-      }
-    })
-
-    lspconfig.clangd.setup({ -- Usar la variable local 'lspconfig'
-      on_attach = on_attach,
-      capabilities = cmp_capabilities, -- Usar la variable local 'cmp_capabilities'
-      filetypes = {"c", "cpp", "objc", "objcpp", "cuda"},
-    })
-
-    lspconfig.sqlls.setup({ -- Usar la variable local 'lspconfig'
-      on_attach = on_attach,
-      capabilities = cmp_capabilities, -- Usar la variable local 'cmp_capabilities'
-      filetypes = { "sql", "mysql", "plsql" },
-    })
-
-    -- >>> NUEVA CONFIGURACIÓN PARA HTML, CSS, JS Y EMMET <<<
-
-    lspconfig.html.setup({ -- Usar la variable local 'lspconfig'
-      on_attach = on_attach,
-      capabilities = cmp_capabilities, -- Usar la variable local 'cmp_capabilities'
-    })
-
-    lspconfig.cssls.setup({ -- Usar la variable local 'lspconfig'
-      on_attach = on_attach,
-      capabilities = cmp_capabilities, -- Usar la variable local 'cmp_capabilities'
-    })
-
-    lspconfig.ts_ls.setup({ -- Usar la variable local 'lspconfig'
-      on_attach = on_attach,
-      capabilities = cmp_capabilities, -- Usar la variable local 'cmp_capabilities'
-    })
-
-    lspconfig.emmet_ls.setup({ -- Usar la variable local 'lspconfig'
-      on_attach = on_attach,
-      capabilities = cmp_capabilities, -- Usar la variable local 'cmp_capabilities'
-      filetypes = {
-        "html", "css", "scss", "less", "sass", "javascript", "javascriptreact",
-        "typescriptreact", "haml", "xml", "xsl", "pug", "slim", "svelte", "vue",
-      },
-      cmd = { 
-        "node", 
-        "/home/binario/.local/share/nvim/mason/packages/emmet-language-server/node_modules/.bin/emmet-language-server", 
-        "--stdio" 
-      }
-    })
-    -- >>> FIN DE LA NUEVA CONFIGURACIÓN <<<
-
-  end
+    lspconfig.lua_ls.setup({ on_attach = on_attach, capabilities = cmp_capabilities, settings = { Lua = { telemetry = { enable = false }, workspace = { checkThirdParty = false } } } }); lspconfig.clangd.setup({ on_attach = on_attach, capabilities = cmp_capabilities, filetypes = {"c", "cpp", "objc", "objcpp", "cuda"} }); lspconfig.sqlls.setup({ on_attach = on_attach, capabilities = cmp_capabilities, filetypes = { "sql", "mysql", "plsql" } }); lspconfig.html.setup({ on_attach = on_attach, capabilities = cmp_capabilities }); lspconfig.cssls.setup({ on_attach = on_attach, capabilities = cmp_capabilities }); lspconfig.ts_ls.setup({ on_attach = on_attach, capabilities = cmp_capabilities }); lspconfig.emmet_ls.setup({ on_attach = on_attach, capabilities = cmp_capabilities, filetypes = { "html", "css", "scss", "less", "sass", "javascript", "javascriptreact", "typescriptreact", "haml", "xml", "xsl", "pug", "slim", "svelte", "vue", "php", "blade", }, cmd = { "node", "/home/binario/.local/share/nvim/mason/packages/emmet-language-server/node_modules/.bin/emmet-language-server", "--stdio" } })
+    lspconfig.intelephense.setup({ on_attach = on_attach, capabilities = cmp_capabilities, filetypes = { "php", "phtml", "blade" }, settings = { intelephense = { files = { maxSize = 5000000 }, environment = {}, stubs = { "apache", "bcmath", "bz2", "calendar", "Core", "ctype", "curl", "date", "dba", "dom", "enchant", "exif", "FFI", "fileinfo", "filter", "fpm", "ftp", "gd", "gettext", "gmp", "hash", "iconv", "imap", "intl", "json", "ldap", "libxml", "mbstring", "mysqli", "oci8", "odbc", "openssl", "pcntl", "pcre", "PDO", "pdo_ibm", "pdo_mysql", "pdo_pgsql", "pdo_sqlite", "pgsql", "phar", "posix", "pspell", "readline", "Reflection", "session", "shmop", "SimpleXML", "snmp", "soap", "sockets", "sodium", "SPL", "sqlite3", "standard", "sysvmsg", "sysvsem", "sysvshm", "tidy", "tokenizer", "xml", "xmlreader", "xmlrpc", "xmlwriter", "xsl", "zip", "zlib", }, } }, })
+  end,
 }
 ```
 
@@ -1036,109 +1127,64 @@ return {
 Plugin: `none-ls.nvim` (antes null-ls, para linters y formatters como fuentes LSP).
 
 ```lua
--- lua/plugins/none-ls.lua
+-- lua/plugins/none-ls.lua (MÍNIMA - Solo clang-format y SIN PHP)
 return {
   "nvimtools/none-ls.nvim",
-  -- Vuelve a tu configuración de carga preferida, ej:
-  event = { "BufReadPre", "BufNewFile" }, 
-  -- lazy = false, -- Comenta o elimina esto si lo pusiste para depurar
+  event = { "BufReadPre", "BufNewFile" },
   dependencies = {
     "nvim-lua/plenary.nvim",
-    "nvimtools/none-ls-extras.nvim",
+    -- "nvimtools/none-ls-extras.nvim", -- Puedes descomentarlo si necesitas eslint/stylelint
   },
   config = function()
-    -- vim.notify("none-ls: Iniciando función config...", vim.log.levels.INFO) -- DEBUG
+    -- vim.notify("None-LS: Iniciando config (MÍNIMA, SIN PHP)", vim.log.levels.INFO, {title="None-LS"})
 
     local null_ls_ok, null_ls = pcall(require, "null-ls")
     if not null_ls_ok then
-      vim.notify("Error: none-ls (null-ls) no pudo ser requerido: " .. tostring(null_ls), vim.log.levels.ERROR)
+      vim.schedule(function()
+        vim.notify("Error: none-ls (null-ls) no pudo ser requerido: " .. tostring(null_ls), vim.log.levels.ERROR, { title = "None-LS Error" })
+      end)
       return
     end
-    -- vim.notify("none-ls: Módulo 'null-ls' requerido.", vim.log.levels.INFO) -- DEBUG
 
-    local builtins_ok, B = pcall(function() return null_ls.builtins end)
-    if not builtins_ok then
-      vim.notify("Error: null_ls.builtins no está disponible: " .. tostring(B), vim.log.levels.ERROR)
-      return
+    local B_ok, B = pcall(function() return null_ls.builtins end)
+    if not B_ok then 
+      -- vim.notify("None-LS: Error al cargar null_ls.builtins. B se establecerá a tabla vacía.", vim.log.levels.WARN, { title = "None-LS" })
+      B = {} 
     end
-    -- vim.notify("none-ls: Módulo 'null-ls.builtins' accesible.", vim.log.levels.INFO) -- DEBUG
 
     local sources = {}
-    local eslint_source_ok, eslint_source
+    local mason_bin_dir = vim.fn.stdpath("data") .. "/mason/bin/"
 
     -- 1. CLANG FORMAT
-    if B.formatting.clang_format then
-        table.insert(sources, B.formatting.clang_format)
-        -- vim.notify("none-ls: clang_format añadido desde builtins.", vim.log.levels.INFO) -- DEBUG
-    else
-        vim.notify("none-ls: B.formatting.clang_format NO disponible.", vim.log.levels.WARN)
-    end
-
-    -- 2. ESLINT (eslint_d o eslint)
-    eslint_source_ok, eslint_source = pcall(require, "none-ls.diagnostics.eslint_d")
-    if not eslint_source_ok then
-      eslint_source_ok, eslint_source = pcall(require, "none-ls.diagnostics.eslint")
-    end
-
-    if eslint_source_ok and eslint_source then
-      -- vim.notify("none-ls: Fuente eslint/eslint_d REQUERIDA exitosamente.", vim.log.levels.INFO) -- DEBUG
-      local eslint_exec = vim.fn.executable("eslint_d") == 1 and "eslint_d" or (vim.fn.executable("eslint") == 1 and "eslint" or nil)
-      if eslint_exec then
-          local eslint_path = vim.fn.trim(vim.fn.system("which " .. eslint_exec))
-          table.insert(sources, eslint_source.with({
-              command = eslint_path,
-              condition = function(utils)
-                return utils.root_has_file({ ".eslintrc.js", ".eslintrc.json", "package.json" })
-              end,
-              diagnostics_format = '[eslint] #{m} (#{c})' -- Puedes mantener o quitar el '_d' aquí
-          }))
-          -- vim.notify("none-ls: " .. eslint_exec .. " configurado y añadido a sources.", vim.log.levels.INFO) -- DEBUG
-      else
-          vim.notify("none-ls: No se encontró ejecutable para eslint ni eslint_d. Intentando añadir fuente sin 'command'.", vim.log.levels.WARN)
-          table.insert(sources, eslint_source)
-      end
-    else
-      vim.notify("none-ls: No se pudo REQUERIR ninguna fuente eslint/eslint_d.", vim.log.levels.ERROR)
-    end
-
-    -- 3. STYLELINT
-    if B.diagnostics.stylelint then
-      -- vim.notify("none-ls: Builtin B.diagnostics.stylelint ENCONTRADO.", vim.log.levels.INFO) -- DEBUG
-      local stylelint_path = vim.fn.trim(vim.fn.system("which stylelint"))
-      if vim.v.shell_error == 0 and stylelint_path ~= "" then
-        -- vim.notify("none-ls: Path para stylelint: " .. stylelint_path, vim.log.levels.INFO) -- DEBUG
-        table.insert(sources, B.diagnostics.stylelint.with({
-          command = stylelint_path,
-          condition = function(utils)
-            return utils.root_has_file({ ".stylelintrc.json", ".stylelintrc.js", "stylelint.config.js", "package.json"})
-          end,
-          diagnostics_format = '[stylelint] #{m}'
+    if B and B.formatting and B.formatting.clang_format then
+      local clang_format_path = mason_bin_dir .. "clang-format"
+      if vim.fn.executable(clang_format_path) == 1 then
+        table.insert(sources, B.formatting.clang_format.with({
+          command = clang_format_path,
         }))
-        -- vim.notify("none-ls: stylelint añadido a sources con path.", vim.log.levels.INFO) -- DEBUG
+        -- vim.notify("None-LS: clang_format añadido.", vim.log.levels.INFO, { title = "None-LS" })
       else
-        vim.notify("none-ls: stylelint NO encontrado en PATH, intentando sin path explícito.", vim.log.levels.WARN)
-        table.insert(sources, B.diagnostics.stylelint)
-        -- vim.notify("none-ls: stylelint añadido a sources (sin path explícito).", vim.log.levels.INFO) -- DEBUG
+        vim.notify("None-LS: clang-format NO es ejecutable en Mason: " .. clang_format_path, vim.log.levels.WARN, { title = "None-LS" })
       end
     else
-      vim.notify("none-ls: Builtin B.diagnostics.stylelint NO ENCONTRADO.", vim.log.levels.ERROR)
+      vim.notify("None-LS: Builtin para clang_format NO disponible.", vim.log.levels.WARN, { title = "None-LS" })
     end
 
-    -- Configuración de none-ls
+    -- AQUÍ PODRÍAS REINTRODUCIR ESLINT Y STYLELINT SI QUIERES Y SI FUNCIONABAN ANTES
+    -- PERO NO AÑADAS NADA DE PHPCS O PHP-CS-FIXER
+
     if #sources > 0 then
-      null_ls.setup({
-        -- debug = true, -- Cambia a false cuando ya no necesites depurar
-        debug = false, 
+      local setup_ok, setup_err = pcall(null_ls.setup, {
+        debug = false,
         sources = sources,
-        -- on_attach = function(client, bufnr) -- Comenta si no quieres la notificación de adjunto
-          -- vim.notify("none-ls: Cliente '" .. client.name .. "' adjunto al buffer " .. bufnr, vim.log.levels.INFO)
-        -- end,
       })
-      -- local source_names = {}
-      -- for _, s_obj in ipairs(sources) do table.insert(source_names, s_obj.name or "fuente_sin_nombre") end
-      -- vim.notify("none-ls.nvim configurado con fuentes: " .. table.concat(source_names, ", "), vim.log.levels.INFO) -- DEBUG
+      if not setup_ok then
+        vim.notify("None-LS: ERROR en null_ls.setup: " .. tostring(setup_err), vim.log.levels.ERROR, {title="None-LS"})
+      else
+        -- vim.notify("None-LS: null_ls.setup completado con " .. #sources .. " fuente(s).", vim.log.levels.INFO, {title="None-LS"})
+      end
     else
-      vim.notify("none-ls: Ninguna fuente válida para configurar.", vim.log.levels.ERROR)
+      -- vim.notify("None-LS: Ninguna fuente para configurar.", vim.log.levels.INFO, { title = "None-LS" })
     end
   end,
 }
@@ -1279,7 +1325,6 @@ Plugin: `toggleterm.nvim` (notificaciones mejoradas).
 
 ```lua
 -- ~/.config/nvim/lua/plugins/terminal.lua
--- ~/.config/nvim/lua/plugins/terminal.lua
 return {
   {
     "akinsho/toggleterm.nvim",
@@ -1334,6 +1379,7 @@ return {
 Plugin: `nvim-treesitter` (mejor resaltado de sintaxis y más).
 
 ```lua
+-- lua/plugins/tree-sitter.lua
 return {
   "nvim-treesitter/nvim-treesitter",
   dependencies = {
@@ -1356,12 +1402,16 @@ return {
       "html",
       "css",
       "javascript",
+      -- >>> AÑADIDOS/CONFIRMADOS PARA PHP <<<
+      "php",
+      "phpdoc", -- Para comentarios PHPDoc
+      "json",   -- Útil para composer.json, etc.
     },
     highlight = {
       enable = true,
     },
     indent = {
-      enable = true,
+      enable = true, -- Treesitter puede ayudar con la indentación
     },
     textobjects = {
       select = {
@@ -1374,14 +1424,17 @@ return {
           ["ic"] = "@conditional.inner",
           ["al"] = "@loop.outer",
           ["il"] = "@loop.inner",
+          -- Puedes añadir textobjects específicos de PHP aquí más tarde si quieres
+          -- ["aP"] = { query = "@class.outer", desc = "Select outer PHP class" },
+          -- ["iP"] = { query = "@class.inner", desc = "Select inner PHP class" },
         }
       }
     },
     playground = {
       enable = true,
       disable = {},
-      updatetime = 25,       -- Debounced time for highlighting nodes in the playground from source code
-      persist_queries = false, -- Whether the query persists across vim sessions
+      updatetime = 25,
+      persist_queries = false,
       keybindings = {
         toggle_query_editor = 'o',
         toggle_hl_groups = 'i',
