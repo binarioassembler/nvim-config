@@ -1,3 +1,4 @@
+-- lua/plugins/tree-sitter.lua
 return {
   "nvim-treesitter/nvim-treesitter",
   dependencies = {
@@ -20,12 +21,16 @@ return {
       "html",
       "css",
       "javascript",
+      -- >>> AÑADIDOS/CONFIRMADOS PARA PHP <<<
+      "php",
+      "phpdoc", -- Para comentarios PHPDoc
+      "json",   -- Útil para composer.json, etc.
     },
     highlight = {
       enable = true,
     },
     indent = {
-      enable = true,
+      enable = true, -- Treesitter puede ayudar con la indentación
     },
     textobjects = {
       select = {
@@ -38,14 +43,17 @@ return {
           ["ic"] = "@conditional.inner",
           ["al"] = "@loop.outer",
           ["il"] = "@loop.inner",
+          -- Puedes añadir textobjects específicos de PHP aquí más tarde si quieres
+          -- ["aP"] = { query = "@class.outer", desc = "Select outer PHP class" },
+          -- ["iP"] = { query = "@class.inner", desc = "Select inner PHP class" },
         }
       }
     },
     playground = {
       enable = true,
       disable = {},
-      updatetime = 25,       -- Debounced time for highlighting nodes in the playground from source code
-      persist_queries = false, -- Whether the query persists across vim sessions
+      updatetime = 25,
+      persist_queries = false,
       keybindings = {
         toggle_query_editor = 'o',
         toggle_hl_groups = 'i',

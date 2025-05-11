@@ -1,106 +1,61 @@
--- lua/plugins/none-ls.lua
+-- lua/plugins/none-ls.lua (MÍNIMA - Solo clang-format y SIN PHP)
 return {
   "nvimtools/none-ls.nvim",
-  -- Vuelve a tu configuración de carga preferida, ej:
-  event = { "BufReadPre", "BufNewFile" }, 
-  -- lazy = false, -- Comenta o elimina esto si lo pusiste para depurar
+  event = { "BufReadPre", "BufNewFile" },
   dependencies = {
     "nvim-lua/plenary.nvim",
-    "nvimtools/none-ls-extras.nvim",
+    -- "nvimtools/none-ls-extras.nvim", -- Puedes descomentarlo si necesitas eslint/stylelint
   },
   config = function()
-    -- vim.notify("none-ls: Iniciando función config...", vim.log.levels.INFO) -- DEBUG
+    -- vim.notify("None-LS: Iniciando config (MÍNIMA, SIN PHP)", vim.log.levels.INFO, {title="None-LS"})
 
     local null_ls_ok, null_ls = pcall(require, "null-ls")
     if not null_ls_ok then
-      vim.notify("Error: none-ls (null-ls) no pudo ser requerido: " .. tostring(null_ls), vim.log.levels.ERROR)
+      vim.schedule(function()
+        vim.notify("Error: none-ls (null-ls) no pudo ser requerido: " .. tostring(null_ls), vim.log.levels.ERROR, { title = "None-LS Error" })
+      end)
       return
     end
-    -- vim.notify("none-ls: Módulo 'null-ls' requerido.", vim.log.levels.INFO) -- DEBUG
 
-    local builtins_ok, B = pcall(function() return null_ls.builtins end)
-    if not builtins_ok then
-      vim.notify("Error: null_ls.builtins no está disponible: " .. tostring(B), vim.log.levels.ERROR)
-      return
+    local B_ok, B = pcall(function() return null_ls.builtins end)
+    if not B_ok then 
+      -- vim.notify("None-LS: Error al cargar null_ls.builtins. B se establecerá a tabla vacía.", vim.log.levels.WARN, { title = "None-LS" })
+      B = {} 
     end
-    -- vim.notify("none-ls: Módulo 'null-ls.builtins' accesible.", vim.log.levels.INFO) -- DEBUG
 
     local sources = {}
-    local eslint_source_ok, eslint_source
+    local mason_bin_dir = vim.fn.stdpath("data") .. "/mason/bin/"
 
     -- 1. CLANG FORMAT
-    if B.formatting.clang_format then
-        table.insert(sources, B.formatting.clang_format)
-        -- vim.notify("none-ls: clang_format añadido desde builtins.", vim.log.levels.INFO) -- DEBUG
-    else
-        vim.notify("none-ls: B.formatting.clang_format NO disponible.", vim.log.levels.WARN)
-    end
-
-    -- 2. ESLINT (eslint_d o eslint)
-    eslint_source_ok, eslint_source = pcall(require, "none-ls.diagnostics.eslint_d")
-    if not eslint_source_ok then
-      eslint_source_ok, eslint_source = pcall(require, "none-ls.diagnostics.eslint")
-    end
-
-    if eslint_source_ok and eslint_source then
-      -- vim.notify("none-ls: Fuente eslint/eslint_d REQUERIDA exitosamente.", vim.log.levels.INFO) -- DEBUG
-      local eslint_exec = vim.fn.executable("eslint_d") == 1 and "eslint_d" or (vim.fn.executable("eslint") == 1 and "eslint" or nil)
-      if eslint_exec then
-          local eslint_path = vim.fn.trim(vim.fn.system("which " .. eslint_exec))
-          table.insert(sources, eslint_source.with({
-              command = eslint_path,
-              condition = function(utils)
-                return utils.root_has_file({ ".eslintrc.js", ".eslintrc.json", "package.json" })
-              end,
-              diagnostics_format = '[eslint] #{m} (#{c})' -- Puedes mantener o quitar el '_d' aquí
-          }))
-          -- vim.notify("none-ls: " .. eslint_exec .. " configurado y añadido a sources.", vim.log.levels.INFO) -- DEBUG
-      else
-          vim.notify("none-ls: No se encontró ejecutable para eslint ni eslint_d. Intentando añadir fuente sin 'command'.", vim.log.levels.WARN)
-          table.insert(sources, eslint_source)
-      end
-    else
-      vim.notify("none-ls: No se pudo REQUERIR ninguna fuente eslint/eslint_d.", vim.log.levels.ERROR)
-    end
-
-    -- 3. STYLELINT
-    if B.diagnostics.stylelint then
-      -- vim.notify("none-ls: Builtin B.diagnostics.stylelint ENCONTRADO.", vim.log.levels.INFO) -- DEBUG
-      local stylelint_path = vim.fn.trim(vim.fn.system("which stylelint"))
-      if vim.v.shell_error == 0 and stylelint_path ~= "" then
-        -- vim.notify("none-ls: Path para stylelint: " .. stylelint_path, vim.log.levels.INFO) -- DEBUG
-        table.insert(sources, B.diagnostics.stylelint.with({
-          command = stylelint_path,
-          condition = function(utils)
-            return utils.root_has_file({ ".stylelintrc.json", ".stylelintrc.js", "stylelint.config.js", "package.json"})
-          end,
-          diagnostics_format = '[stylelint] #{m}'
+    if B and B.formatting and B.formatting.clang_format then
+      local clang_format_path = mason_bin_dir .. "clang-format"
+      if vim.fn.executable(clang_format_path) == 1 then
+        table.insert(sources, B.formatting.clang_format.with({
+          command = clang_format_path,
         }))
-        -- vim.notify("none-ls: stylelint añadido a sources con path.", vim.log.levels.INFO) -- DEBUG
+        -- vim.notify("None-LS: clang_format añadido.", vim.log.levels.INFO, { title = "None-LS" })
       else
-        vim.notify("none-ls: stylelint NO encontrado en PATH, intentando sin path explícito.", vim.log.levels.WARN)
-        table.insert(sources, B.diagnostics.stylelint)
-        -- vim.notify("none-ls: stylelint añadido a sources (sin path explícito).", vim.log.levels.INFO) -- DEBUG
+        vim.notify("None-LS: clang-format NO es ejecutable en Mason: " .. clang_format_path, vim.log.levels.WARN, { title = "None-LS" })
       end
     else
-      vim.notify("none-ls: Builtin B.diagnostics.stylelint NO ENCONTRADO.", vim.log.levels.ERROR)
+      vim.notify("None-LS: Builtin para clang_format NO disponible.", vim.log.levels.WARN, { title = "None-LS" })
     end
 
-    -- Configuración de none-ls
+    -- AQUÍ PODRÍAS REINTRODUCIR ESLINT Y STYLELINT SI QUIERES Y SI FUNCIONABAN ANTES
+    -- PERO NO AÑADAS NADA DE PHPCS O PHP-CS-FIXER
+
     if #sources > 0 then
-      null_ls.setup({
-        -- debug = true, -- Cambia a false cuando ya no necesites depurar
-        debug = false, 
+      local setup_ok, setup_err = pcall(null_ls.setup, {
+        debug = false,
         sources = sources,
-        -- on_attach = function(client, bufnr) -- Comenta si no quieres la notificación de adjunto
-          -- vim.notify("none-ls: Cliente '" .. client.name .. "' adjunto al buffer " .. bufnr, vim.log.levels.INFO)
-        -- end,
       })
-      -- local source_names = {}
-      -- for _, s_obj in ipairs(sources) do table.insert(source_names, s_obj.name or "fuente_sin_nombre") end
-      -- vim.notify("none-ls.nvim configurado con fuentes: " .. table.concat(source_names, ", "), vim.log.levels.INFO) -- DEBUG
+      if not setup_ok then
+        vim.notify("None-LS: ERROR en null_ls.setup: " .. tostring(setup_err), vim.log.levels.ERROR, {title="None-LS"})
+      else
+        -- vim.notify("None-LS: null_ls.setup completado con " .. #sources .. " fuente(s).", vim.log.levels.INFO, {title="None-LS"})
+      end
     else
-      vim.notify("none-ls: Ninguna fuente válida para configurar.", vim.log.levels.ERROR)
+      -- vim.notify("None-LS: Ninguna fuente para configurar.", vim.log.levels.INFO, { title = "None-LS" })
     end
   end,
 }
