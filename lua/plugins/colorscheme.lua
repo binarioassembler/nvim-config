@@ -1,9 +1,9 @@
 -- lua/plugins/colorscheme.lua
 return {
   "catppuccin/nvim",
-  name = "catppuccin", -- Nombre para referenciarlo
+  name = "catppuccin",      -- Nombre para referenciarlo
   lazy = false,
-  priority = 1000,    -- Asegura que se cargue temprano
+  priority = 1000,          -- Asegura que se cargue temprano
   config = function()
     local flavour = "frappe" -- << CAMBIA AQUÍ TU FLAVOUR PREFERIDO: "latte", "frappe", "macchiato", "mocha"
 

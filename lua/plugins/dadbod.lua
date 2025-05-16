@@ -50,13 +50,16 @@ return {
           if pg_url then
             connections.postgres_local_binario = { url = pg_url }
           else
-            vim.notify("Variable de entorno DB_POSTGRES_LOCAL_URL no definida.", vim.log.levels.WARN)
+            -- Puedes mantener o quitar estas notificaciones si lo deseas
+            vim.notify("Variable de entorno DB_POSTGRES_LOCAL_URL no definida.", vim.log.levels.WARN,
+              { title = "Dadbod UI" })
           end
 
           if mysql_url then
             connections.mysql_local_root = { url = mysql_url }
           else
-            vim.notify("Variable de entorno DB_MYSQL_LOCAL_URL no definida.", vim.log.levels.WARN)
+            vim.notify("Variable de entorno DB_MYSQL_LOCAL_URL no definida.", vim.log.levels.WARN,
+              { title = "Dadbod UI" })
           end
 
           vim.g.db_ui_connections = connections
@@ -66,7 +69,7 @@ return {
       },
       {
         "kristijanhusak/vim-dadbod-completion",
-        ft = { "sql", "mysql", "plsql" },
+        ft = { "sql", "mysql", "plsql" }, -- Restaurado como lo tenías
         lazy = true,
       },
     },
